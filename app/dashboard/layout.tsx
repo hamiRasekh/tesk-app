@@ -2,10 +2,11 @@ import type { Metadata, Viewport } from "next";
 import "../void-theme.css";
 import "../void-theme-pro.css";
 import { VoidShell } from "@/components/void/VoidShell";
+import { APP_DESCRIPTION, APP_NAME } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Void Spirit — Dashboard",
-  description: "Master your tasks, conquer your spirit."
+  title: `${APP_NAME} — Dashboard`,
+  description: APP_DESCRIPTION
 };
 
 export const viewport: Viewport = {

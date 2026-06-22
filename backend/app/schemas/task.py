@@ -7,6 +7,8 @@ class TaskCreate(BaseModel):
     project_id: str | None = Field(default=None, alias="projectId")
     due_date: str = Field(alias="dueDate")
     priority: str = "medium"
+    difficulty: int = Field(default=5, ge=1, le=10)
+    importance: int = Field(default=5, ge=1, le=10)
     estimated_minutes: int = Field(default=30, ge=5, le=480, alias="estimatedMinutes")
     attachments: list[str] = []
 
@@ -19,6 +21,8 @@ class TaskUpdate(BaseModel):
     project_id: str | None = Field(default=None, alias="projectId")
     due_date: str | None = Field(default=None, alias="dueDate")
     priority: str | None = None
+    difficulty: int | None = Field(default=None, ge=1, le=10)
+    importance: int | None = Field(default=None, ge=1, le=10)
     status: str | None = None
     estimated_minutes: int | None = Field(default=None, alias="estimatedMinutes")
     logged_minutes: int | None = Field(default=None, alias="loggedMinutes")

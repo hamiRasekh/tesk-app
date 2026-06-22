@@ -4,7 +4,8 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useEffect, useState } from "react";
-import { apiSignup, setToken } from "@/lib/api";
+import { apiSignup, isOfflineError, purgeLegacyDemoStorage, setToken } from "@/lib/api";
+import { APP_NAME } from "@/lib/brand";
 import { VoidSpirit } from "@/components/void/VoidSpirit";
 import { registerServiceWorker } from "../sw-register";
 
@@ -29,12 +30,14 @@ const goals = [
   "Prepare for work"
 ];
 
-const steps = ["name", "email", "phone", "age", "work", "goals", "done"] as const;
+const steps = ["name", "email", "password", "phone", "age", "work", "goals", "done"] as const;
 type Step = (typeof steps)[number];
 
 type SignupForm = {
   name: string;
   email: string;
+  password: string;
+  confirmPassword: string;
   phone: string;
   age: string;
   jobs: string[];
@@ -44,6 +47,8 @@ type SignupForm = {
 const initialForm: SignupForm = {
   name: "",
   email: "",
+  password: "",
+  confirmPassword: "",
   phone: "",
   age: "",
   jobs: [],
@@ -53,8 +58,10 @@ const initialForm: SignupForm = {
 export default function SignupPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [form, setForm] = useState(initialForm);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
+    purgeLegacyDemoStorage();
     registerServiceWorker();
   }, []);
 
@@ -78,6 +85,9 @@ export default function SignupPage() {
   function canContinue(currentStep: Step) {
     if (currentStep === "name") return form.name.trim().length >= 2;
     if (currentStep === "email") return /\S+@\S+\.\S+/.test(form.email);
+    if (currentStep === "password") {
+      return form.password.length >= 8 && form.password === form.confirmPassword;
+    }
     if (currentStep === "phone") return form.phone.trim().length >= 8;
     if (currentStep === "age") return Number(form.age) >= 8;
     if (currentStep === "work") return form.jobs.length > 0;
@@ -86,20 +96,26 @@ export default function SignupPage() {
   }
 
   async function submit() {
+    setSubmitError("");
     try {
       const res = await apiSignup({
         name: form.name,
         email: form.email,
+        password: form.password,
         phone: form.phone,
         age: Number(form.age),
         jobs: form.jobs,
         goals: form.goals
       });
       setToken(res.access_token);
-    } catch {
-      // demo mode without backend
+      setStepIndex(steps.length - 1);
+    } catch (err) {
+      if (isOfflineError(err)) {
+        setSubmitError("You are offline. Connect to the internet to create an account.");
+      } else {
+        setSubmitError(err instanceof Error ? err.message : "Could not create account. Is the server running?");
+      }
     }
-    setStepIndex(steps.length - 1);
   }
 
   function next() {
@@ -123,8 +139,8 @@ export default function SignupPage() {
           </button>
         ) : (
           <div className="void-signup__brand">
-            <img src="/hello.png" alt="" />
-            Void Spirit
+            <img src="/logo.png" alt={APP_NAME} />
+            {APP_NAME}
           </div>
         )}
         {step !== "done" && (
@@ -155,14 +171,36 @@ export default function SignupPage() {
                   {step === "name" && (
                     <label className="void-label">
                       Your name
-                      <input className="void-input" value={form.name} onChange={(e) => updateField("name", e.target.value)} placeholder="Void Walker" autoComplete="name" />
+                      <input className="void-input" value={form.name} onChange={(e) => updateField("name", e.target.value)} placeholder="Your name" autoComplete="name" />
                     </label>
                   )}
                   {step === "email" && (
                     <label className="void-label">
                       Email address
-                      <input className="void-input" value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="you@void.spirit" type="email" autoComplete="email" />
+                      <input className="void-input" value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="you@aveno.app" type="email" autoComplete="email" />
                     </label>
+                  )}
+                  {step === "password" && (
+                    <>
+                      <label className="void-label">
+                        Create password
+                        <input className="void-input" value={form.password} onChange={(e) => updateField("password", e.target.value)} placeholder="At least 8 characters" type="password" autoComplete="new-password" />
+                      </label>
+                      <label className="void-label" style={{ marginTop: 14 }}>
+                        Confirm password
+                        <input
+                          className="void-input"
+                          value={form.confirmPassword}
+                          onChange={(e) => updateField("confirmPassword", e.target.value)}
+                          placeholder="Repeat your password"
+                          type="password"
+                          autoComplete="new-password"
+                        />
+                      </label>
+                      {form.confirmPassword && form.password !== form.confirmPassword ? (
+                        <p className="void-form-error">Passwords do not match.</p>
+                      ) : null}
+                    </>
                   )}
                   {step === "phone" && (
                     <label className="void-label">
@@ -187,12 +225,13 @@ export default function SignupPage() {
 
       {step !== "done" ? (
         <footer className="void-signup__footer">
+          {submitError ? <p className="void-form-error">{submitError}</p> : null}
           <button type="button" className="void-btn-primary" disabled={!canContinue(step)} onClick={next}>
-            {step === "goals" ? "Summon Account" : "Continue"}
+            {step === "goals" ? "Create account" : "Continue"}
             <ArrowRight size={18} style={{ marginLeft: 6, verticalAlign: "middle" }} />
           </button>
           <Link className="void-link" href="/login">
-            Already in the void? <strong>Sign in</strong>
+            Already have an account? <strong>Sign in</strong>
           </Link>
         </footer>
       ) : null}
@@ -202,12 +241,13 @@ export default function SignupPage() {
 
 function StepCopy({ step }: { step: Exclude<Step, "done"> }) {
   const content: Record<Exclude<Step, "done">, { title: string; text: string }> = {
-    name: { title: "What should we call you?", text: "Your spirit companion learns your name first." },
-    email: { title: "Enter your essence link.", text: "Use it to return to the void anytime." },
-    phone: { title: "Mobile number?", text: "For account protection across realms." },
-    age: { title: "How old are you?", text: "We tune the ritual to your life stage." },
+    name: { title: "What should we call you?", text: "Your companion learns your name first." },
+    email: { title: "Your email address", text: "Use it to sign in to Aveno anytime." },
+    password: { title: "Create a password", text: "Choose a strong password — at least 8 characters." },
+    phone: { title: "Mobile number?", text: "Optional — for account recovery and security." },
+    age: { title: "How old are you?", text: "We personalize tips to your life stage." },
     work: { title: "Pick your roles.", text: "Choose one or more paths you walk." },
-    goals: { title: "What will you conquer?", text: "Select every area where you want momentum." }
+    goals: { title: "What will you focus on?", text: "Select every area where you want momentum." }
   };
 
   return (
@@ -223,7 +263,7 @@ function ChoiceGrid({ items, selected, onToggle }: { items: string[]; selected: 
     <div className="void-choice-grid">
       {items.map((item) => (
         <button key={item} type="button" className="void-choice" data-selected={selected.includes(item)} onClick={() => onToggle(item)}>
-          {selected.includes(item) && <Check size={16} style={{ marginRight: 4, verticalAlign: "middle" }} />}
+          {selected.includes(item) && <Check size={18} strokeWidth={2.5} />}
           {item}
         </button>
       ))}
@@ -237,8 +277,8 @@ function SuccessView({ form }: { form: SignupForm }) {
       <div className="void-spirit-wrap void-spirit-slot void-spirit-slot--profile">
         <VoidSpirit variant="happy" scale="lg" showcase glow />
       </div>
-      <h1>Welcome, {form.name || "Walker"}!</h1>
-      <p>Your void ritual is ready. Enter the dashboard and begin.</p>
+      <h1>Welcome, {form.name || "there"}!</h1>
+      <p>Your Aveno account is ready. Enter the dashboard and begin.</p>
       <div style={{ margin: "14px 0" }}>
         {form.jobs.slice(0, 3).map((job) => (
           <span className="void-badge" key={job}>
@@ -246,9 +286,15 @@ function SuccessView({ form }: { form: SignupForm }) {
           </span>
         ))}
       </div>
-      <Link className="void-btn-primary" href="/dashboard" style={{ display: "inline-block", textDecoration: "none" }}>
+      <button
+        type="button"
+        className="void-btn-primary"
+        onClick={() => {
+          window.location.href = "/dashboard";
+        }}
+      >
         Enter Dashboard
-      </Link>
+      </button>
     </div>
   );
 }

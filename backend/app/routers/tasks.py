@@ -10,7 +10,7 @@ from app.models.project import Project
 from app.models.task import Task
 from app.models.user import User
 from app.schemas.task import TaskCreate, TaskUpdate
-from app.services import XP_BY_PRIORITY, award_xp, state_from_user, task_to_dict
+from app.services import XP_BY_PRIORITY, award_xp, flush_timer, state_from_user, task_to_dict
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -38,6 +38,8 @@ def create_task(payload: TaskCreate, user: User = Depends(get_current_user), db:
         description=payload.description,
         due_date=date.fromisoformat(payload.due_date),
         priority=payload.priority,
+        difficulty=payload.difficulty,
+        importance=payload.importance,
         estimated_minutes=payload.estimated_minutes,
         attachments=payload.attachments,
     )
@@ -70,7 +72,7 @@ def update_task(
             task.project_id = project_id
     if "due_date" in data and data["due_date"]:
         task.due_date = date.fromisoformat(data.pop("due_date"))
-    for key in ("title", "description", "priority", "status", "estimated_minutes", "logged_minutes", "attachments"):
+    for key in ("title", "description", "priority", "difficulty", "importance", "status", "estimated_minutes", "logged_minutes", "attachments"):
         if key in data:
             setattr(task, key, data[key])
 
@@ -93,9 +95,38 @@ def start_timer(task_id: UUID, user: User = Depends(get_current_user), db: Sessi
     task = db.query(Task).filter(Task.id == task_id, Task.user_id == user.id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    task.status = "in_progress"
-    user.active_timer_task_id = task.id
-    user.timer_started_at = datetime.now(timezone.utc)
+    now = datetime.now(timezone.utc)
+    if user.active_timer_task_id == task.id:
+        if user.timer_started_at:
+            return state_from_user(user)
+        user.timer_started_at = now
+    else:
+        if user.active_timer_task_id and user.active_timer_task_id != task.id:
+            old = db.query(Task).filter(Task.id == user.active_timer_task_id, Task.user_id == user.id).first()
+            if old:
+                flush_timer(user, old, db)
+        task.status = "in_progress"
+        user.active_timer_task_id = task.id
+        user.timer_accumulated_seconds = 0
+        user.timer_started_at = now
+    db.commit()
+    db.refresh(user)
+    return state_from_user(user)
+
+
+@router.post("/{task_id}/timer/pause")
+def pause_timer(task_id: UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
+    task = db.query(Task).filter(Task.id == task_id, Task.user_id == user.id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    if user.active_timer_task_id != task.id:
+        raise HTTPException(status_code=400, detail="Timer not active for this task")
+    if user.timer_started_at:
+        now = datetime.now(timezone.utc)
+        user.timer_accumulated_seconds = (user.timer_accumulated_seconds or 0) + int(
+            (now - user.timer_started_at).total_seconds()
+        )
+        user.timer_started_at = None
     db.commit()
     db.refresh(user)
     return state_from_user(user)
@@ -106,12 +137,8 @@ def stop_timer(task_id: UUID, user: User = Depends(get_current_user), db: Sessio
     task = db.query(Task).filter(Task.id == task_id, Task.user_id == user.id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    if user.active_timer_task_id == task.id and user.timer_started_at:
-        elapsed = int((datetime.now(timezone.utc) - user.timer_started_at).total_seconds() // 60)
-        task.logged_minutes += max(0, elapsed)
-        user.total_focus_minutes += max(0, elapsed)
-    user.active_timer_task_id = None
-    user.timer_started_at = None
+    if user.active_timer_task_id == task.id:
+        flush_timer(user, task, db, completed=False)
     db.commit()
     db.refresh(user)
     return state_from_user(user)
@@ -122,15 +149,13 @@ def complete_task(task_id: UUID, user: User = Depends(get_current_user), db: Ses
     task = db.query(Task).filter(Task.id == task_id, Task.user_id == user.id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    if user.active_timer_task_id == task.id and user.timer_started_at:
-        elapsed = int((datetime.now(timezone.utc) - user.timer_started_at).total_seconds() // 60)
-        task.logged_minutes += max(0, elapsed)
-        user.total_focus_minutes += max(0, elapsed)
-        user.active_timer_task_id = None
-        user.timer_started_at = None
+    ended = datetime.now(timezone.utc)
+    if user.active_timer_task_id == task.id:
+        flush_timer(user, task, db, completed=True)
     if task.status != "done":
         award_xp(user, XP_BY_PRIORITY.get(task.priority, 50))
     task.status = "done"
+    task.completed_at = ended
     db.commit()
     db.refresh(user)
     return state_from_user(user)

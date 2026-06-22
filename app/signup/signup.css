@@ -98,23 +98,34 @@ body:has(.void-signup-root) .device-shell {
 .void-signup .void-input,
 .void-signup .void-select {
   width: 100%;
-  padding: 14px 16px;
+  padding: 16px 18px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(31, 31, 35, 0.6);
   color: #e4e1e7;
   font: inherit;
+  font-size: clamp(0.95rem, 2.8vw, 1.05rem);
   outline: none;
   margin-top: 8px;
 }
 
 .void-signup .void-label {
   display: block;
-  font-size: 0.72rem;
+  font-size: clamp(0.78rem, 2.4vw, 0.85rem);
   font-family: "JetBrains Mono", monospace;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: #948da2;
+}
+
+.void-signup .void-form-error {
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 107, 138, 0.12);
+  border: 1px solid rgba(255, 107, 138, 0.35);
+  color: #ff8fa8;
+  font-size: clamp(0.85rem, 2.6vw, 0.95rem);
 }
 
 .void-signup .void-choice-grid {
@@ -126,16 +137,19 @@ body:has(.void-signup-root) .device-shell {
 }
 
 .void-signup .void-choice {
-  min-height: 52px;
+  min-height: 56px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.03);
   color: #e4e1e7;
   font-weight: 600;
-  font-size: 0.82rem;
+  font-size: clamp(0.88rem, 2.6vw, 0.95rem);
   text-align: left;
-  padding: 10px;
+  padding: 12px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .void-signup .void-choice[data-selected="true"] {
@@ -151,15 +165,16 @@ body:has(.void-signup-root) .device-shell {
 
 .void-signup .void-btn-primary {
   width: 100%;
-  padding: 14px;
+  padding: 16px;
   border: none;
   border-radius: 999px;
   background: #6200ee;
   color: #cfbdff;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: clamp(1rem, 3vw, 1.05rem);
   cursor: pointer;
   box-shadow: 0 0 24px rgba(98, 0, 238, 0.35);
+  min-height: 54px;
 }
 
 .void-signup .void-btn-primary:disabled {

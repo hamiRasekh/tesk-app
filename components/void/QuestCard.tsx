@@ -64,7 +64,7 @@ export function QuestCard({ project, remaining, total, complete, index = 0, onCl
       <div className="void-quest-card__body">
         <span className="void-quest-card__name">{project.name}</span>
         {complete ? (
-          <span className="void-quest-card__status">Mission Complete</span>
+          <span className="void-quest-card__status">All tasks done</span>
         ) : (
           <span className="void-quest-card__meta">
             {remaining} task{remaining !== 1 ? "s" : ""} remaining · Level {String(project.level).padStart(2, "0")}

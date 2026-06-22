@@ -7,15 +7,17 @@ const SRC: Record<SpiritVariant, string> = {
   normal: "/normal-1.png",
   hello: "/hello.png",
   work: "/work.png",
-  happy: "/happy.png"
+  happy: "/happy.png",
+  write: "/write.png",
+  think: "/think.png"
 };
 
 const MOOD_VARIANT: Record<SpiritMood, SpiritVariant> = {
   idle: "normal",
   focused: "work",
   happy: "happy",
-  writing: "work",
-  reminder: "normal"
+  writing: "write",
+  reminder: "think"
 };
 
 export type SpiritSize = "sm" | "md" | "lg" | "xl";
@@ -31,6 +33,33 @@ type Props = {
   showcase?: boolean;
 };
 
+function spiritMotion(variant: SpiritVariant, showcase: boolean) {
+  if (variant === "think") {
+    return showcase
+      ? { y: [0, -8, 0], rotate: [0, -2, 2, 0] }
+      : { y: [0, -6, 0], rotate: [0, -1.5, 1.5, 0] };
+  }
+  if (variant === "write") {
+    return showcase
+      ? { y: [0, -6, -2, -6, 0], x: [0, 1, -1, 0] }
+      : { y: [0, -4, 0], x: [0, 1, 0] };
+  }
+  if (variant === "work") {
+    return { y: [0, -5, 0], scale: [1, 1.02, 1] };
+  }
+  if (showcase) {
+    return { y: [0, -10, 0] };
+  }
+  return { y: [0, -8, 0] };
+}
+
+function spiritDuration(variant: SpiritVariant, showcase: boolean) {
+  if (variant === "think") return showcase ? 4.2 : 3.6;
+  if (variant === "write") return showcase ? 2.8 : 2.2;
+  if (variant === "work") return 1.4;
+  return showcase ? 3.8 : 3.2;
+}
+
 export function VoidSpirit({
   mood = "idle",
   variant,
@@ -40,13 +69,23 @@ export function VoidSpirit({
   glow = true,
   showcase = false
 }: Props) {
-  const src = SRC[variant ?? MOOD_VARIANT[mood]];
-  const isWork = (variant ?? MOOD_VARIANT[mood]) === "work";
+  const resolved = variant ?? MOOD_VARIANT[mood];
+  const src = SRC[resolved];
+  const isWork = resolved === "work";
+  const isThink = resolved === "think";
+  const isWrite = resolved === "write";
   const sizeClass = size ? "" : `void-spirit--${scale}`;
+  const modeClass = isWork
+    ? "void-spirit--work-mode"
+    : isThink
+      ? "void-spirit--think-mode"
+      : isWrite
+        ? "void-spirit--write-mode"
+        : "void-spirit--float";
 
   return (
     <motion.div
-      className={`void-spirit ${sizeClass} ${showcase ? "void-spirit--showcase" : ""} ${isWork ? "void-spirit--work-mode" : "void-spirit--float"} ${className}`}
+      className={`void-spirit ${sizeClass} ${showcase ? "void-spirit--showcase" : ""} ${modeClass} ${className}`}
       style={size ? { width: size, height: size * 1.15 } : undefined}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -62,19 +101,13 @@ export function VoidSpirit({
         </>
       )}
       <motion.img
-        alt="Void Spirit companion"
+        alt="Aveno companion"
         className="void-spirit__img"
         src={src}
         draggable={false}
-        animate={
-          showcase
-            ? { y: [0, -10, 0] }
-            : isWork
-              ? { y: [0, -5, 0], scale: [1, 1.02, 1] }
-              : { y: [0, -8, 0] }
-        }
+        animate={spiritMotion(resolved, showcase)}
         transition={{
-          duration: isWork ? 1.4 : showcase ? 3.8 : 3.2,
+          duration: spiritDuration(resolved, showcase),
           repeat: Infinity,
           ease: "easeInOut"
         }}

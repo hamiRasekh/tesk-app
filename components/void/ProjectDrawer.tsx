@@ -5,6 +5,7 @@ import { Drawer } from "./Drawer";
 import { VoidSpirit } from "./VoidSpirit";
 import { AddTaskDrawer } from "./AddTaskDrawer";
 import { TaskDrawer } from "./TaskDrawer";
+import { projectColorFor, TaskIndicators } from "./TaskIndicators";
 import { useVoid } from "@/lib/void-store";
 import type { Project, Task } from "@/lib/void-types";
 
@@ -70,7 +71,7 @@ export function ProjectDrawer({ project, open, onClose }: Props) {
               <p className="void-drawer__desc">{project.description}</p>
               <div className="void-meta-grid">
                 <div className="void-meta-item">
-                  <div className="void-meta-item__label">Quests</div>
+                  <div className="void-meta-item__label">Tasks</div>
                   <div className="void-meta-item__value">{projectTasks.length}</div>
                 </div>
                 <div className="void-meta-item void-meta-item--cyan">
@@ -85,17 +86,17 @@ export function ProjectDrawer({ project, open, onClose }: Props) {
 
           {tab === "report" && (
             <>
-              <p className="void-section-title">Realm Report</p>
+              <p className="void-section-title">Project report</p>
               <div className="void-report-row">
-                <span>Focus time channeled</span>
+                <span>Focus time logged</span>
                 <span>{totalMinutes}m</span>
               </div>
               <div className="void-report-row">
-                <span>Quests completed</span>
+                <span>Tasks completed</span>
                 <span>{done}</span>
               </div>
               <div className="void-report-row">
-                <span>Quests remaining</span>
+                <span>Tasks remaining</span>
                 <span>{remaining}</span>
               </div>
               <div className="void-report-row">
@@ -103,7 +104,7 @@ export function ProjectDrawer({ project, open, onClose }: Props) {
                 <span>{critical}</span>
               </div>
               <div className="void-report-row">
-                <span>Mission progress</span>
+                <span>Overall progress</span>
                 <span>{projectTasks.length ? Math.round((done / projectTasks.length) * 100) : 0}%</span>
               </div>
               <p className="void-section-title" style={{ marginTop: 16 }}>
@@ -121,7 +122,7 @@ export function ProjectDrawer({ project, open, onClose }: Props) {
           {tab === "tasks" && (
             <>
               {projectTasks.length === 0 ? (
-                <p className="void-empty">No quests forged in this realm yet.</p>
+                <p className="void-empty">No tasks in this project yet.</p>
               ) : (
                 projectTasks.map((task) => (
                   <div
@@ -132,11 +133,11 @@ export function ProjectDrawer({ project, open, onClose }: Props) {
                       setTaskDrawerOpen(true);
                     }}
                   >
-                    <span className={`void-task-dot void-task-dot--${task.priority}`} />
+                    <TaskIndicators task={task} projectColor={project.color} />
                     <span className={`void-task-row__title${task.status === "done" ? " void-task-row__title--done" : ""}`}>
                       {task.title}
                     </span>
-                    <span className="void-task-row__meta">{task.status}</span>
+                    <span className="void-task-row__meta">D{task.difficulty} · I{task.importance}</span>
                   </div>
                 ))
               )}
@@ -147,7 +148,7 @@ export function ProjectDrawer({ project, open, onClose }: Props) {
         {tab === "overview" && (
           <div className="void-drawer__footer-cta">
             <button type="button" className="void-btn void-btn--initiate" onClick={() => setAddTaskOpen(true)}>
-              Add Quest to Realm
+              Add task to project
             </button>
           </div>
         )}

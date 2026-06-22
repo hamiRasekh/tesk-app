@@ -1,6 +1,6 @@
 # Aveno
 
-A mobile-first PWA starter built with Next.js and React, with a FastAPI backend.
+Aveno is a mobile-first task management PWA with focus tracking, project analytics, and offline support. Built with Next.js and FastAPI.
 
 ## Frontend
 

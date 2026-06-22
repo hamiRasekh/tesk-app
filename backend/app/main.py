@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import app as app_router
-from app.routers import auth, projects, tasks
+from app.routers import auth, calendar, projects, tasks
 
-api = FastAPI(title="Void Spirit API", version="1.0.0")
+api = FastAPI(title="Aveno API", version="1.0.0")
 
 origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 api.add_middleware(
@@ -19,9 +19,10 @@ api.add_middleware(
 api.include_router(auth.router)
 api.include_router(tasks.router)
 api.include_router(projects.router)
+api.include_router(calendar.router)
 api.include_router(app_router.router)
 
 
 @api.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "void-spirit-api"}
+    return {"status": "ok", "service": "aveno-api"}

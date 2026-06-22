@@ -1,14 +1,19 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { APP_DESCRIPTION, APP_NAME } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Void Spirit",
-  description: "AI Task Assistant — Master your tasks, conquer your spirit.",
+  title: APP_NAME,
+  description: APP_DESCRIPTION,
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    apple: [{ url: "/icon.png", type: "image/png" }]
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Void Spirit"
+    title: APP_NAME
   }
 };
 

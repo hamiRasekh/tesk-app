@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./login.css";
 
+import { APP_DESCRIPTION, APP_NAME } from "@/lib/brand";
+
 export const metadata: Metadata = {
-  title: "Void Spirit — Login",
-  description: "Master your tasks, conquer your spirit."
+  title: `${APP_NAME} — Login`,
+  description: APP_DESCRIPTION
 };
 
 export const viewport: Viewport = {

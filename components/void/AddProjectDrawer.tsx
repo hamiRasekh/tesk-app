@@ -2,8 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 import { Network, Rocket, Shield, Circle } from "lucide-react";
+import { ColorPicker } from "./ColorPicker";
 import { Drawer } from "./Drawer";
 import { useVoid } from "@/lib/void-store";
+import { DEFAULT_PROJECT_COLOR } from "@/lib/project-colors";
 import type { RealmIcon } from "@/lib/void-types";
 
 type Props = {
@@ -11,11 +13,11 @@ type Props = {
   onClose: () => void;
 };
 
-const realms: { id: RealmIcon; icon: ReactNode; color: string }[] = [
-  { id: "network", icon: <Network size={22} />, color: "#8b5cf6" },
-  { id: "rocket", icon: <Rocket size={22} />, color: "#2dd4bf" },
-  { id: "shield", icon: <Shield size={22} />, color: "#a78bfa" },
-  { id: "core", icon: <Circle size={22} />, color: "#cfbdff" }
+const realms: { id: RealmIcon; icon: ReactNode }[] = [
+  { id: "network", icon: <Network size={22} /> },
+  { id: "rocket", icon: <Rocket size={22} /> },
+  { id: "shield", icon: <Shield size={22} /> },
+  { id: "core", icon: <Circle size={22} /> }
 ];
 
 export function AddProjectDrawer({ open, onClose }: Props) {
@@ -23,13 +25,13 @@ export function AddProjectDrawer({ open, onClose }: Props) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [realm, setRealm] = useState<RealmIcon>("network");
-
-  const selectedRealm = realms.find((r) => r.id === realm)!;
+  const [color, setColor] = useState<string>(DEFAULT_PROJECT_COLOR);
 
   function reset() {
     setName("");
     setDescription("");
     setRealm("network");
+    setColor(DEFAULT_PROJECT_COLOR);
   }
 
   function submit() {
@@ -37,7 +39,7 @@ export function AddProjectDrawer({ open, onClose }: Props) {
     void addProject({
       name: name.trim(),
       description: description.trim(),
-      color: selectedRealm.color,
+      color,
       realm,
       level: 1
     }).then(() => {
@@ -56,27 +58,32 @@ export function AddProjectDrawer({ open, onClose }: Props) {
     >
       <div className="void-drawer__body">
         <p className="void-section-title" style={{ marginBottom: 4 }}>
-          Forge New Quest
+          New project
         </p>
-        <h2 className="void-drawer__title" style={{ fontSize: "1.1rem", marginBottom: 20 }}>
-          Create a new realm
+        <h2 className="void-drawer__title" style={{ marginBottom: 20 }}>
+          Organize tasks into a project
         </h2>
 
-        <label className="void-label">Quest Name</label>
+        <label className="void-label">Project name</label>
         <input
           className="void-input void-input--pill"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Enter quest name..."
+          placeholder="e.g. Website redesign"
         />
 
-        <label className="void-label">Spirit Realm</label>
+        <label className="void-label">Project color</label>
+        <ColorPicker value={color} onChange={setColor} />
+        <p className="void-color-hint">Tasks in this project show this color beside them.</p>
+
+        <label className="void-label">Icon style</label>
         <div className="void-realm-row">
           {realms.map((r) => (
             <button
               key={r.id}
               type="button"
               className={`void-realm-btn${realm === r.id ? " void-realm-btn--active" : ""}`}
+              style={realm === r.id ? { borderColor: color, color } : undefined}
               onClick={() => setRealm(r.id)}
               aria-label={r.id}
             >
@@ -90,12 +97,12 @@ export function AddProjectDrawer({ open, onClose }: Props) {
           className="void-input void-input--pill"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="What is this quest about?"
+          placeholder="What is this project about?"
         />
       </div>
       <div className="void-drawer__footer-cta">
         <button type="button" className="void-btn void-btn--initiate" onClick={submit}>
-          Initiate Forging
+          Create project
         </button>
       </div>
     </Drawer>

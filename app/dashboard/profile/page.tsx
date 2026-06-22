@@ -6,6 +6,7 @@ import { Bell, CheckCircle2, ChevronRight, Clock, LogOut, Settings, Shield, User
 import { AppHeader } from "@/components/void/AppHeader";
 import { VoidSpirit } from "@/components/void/VoidSpirit";
 import { clearToken } from "@/lib/api";
+import { APP_NAME } from "@/lib/brand";
 import { Drawer } from "@/components/void/Drawer";
 import { useVoid } from "@/lib/void-store";
 import { hoursFromMinutes } from "@/lib/void-utils";
@@ -29,8 +30,8 @@ export default function ProfilePage() {
     <div className="void-shell">
       <header className="void-topbar">
         <div className="void-topbar__brand">
-          <img src="/normal-1.png" alt="" className="void-topbar__logo" />
-          <span className="void-topbar__name">Void Spirit</span>
+          <img src="/logo.png" alt={APP_NAME} className="void-topbar__logo" />
+          <span className="void-topbar__name">{APP_NAME}</span>
         </div>
         <button type="button" className="void-topbar__notify" aria-label="Notifications">
           <Bell size={20} />
@@ -42,14 +43,14 @@ export default function ProfilePage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <VoidSpirit variant="happy" scale="xl" showcase glow />
+        <VoidSpirit variant="happy" scale="lg" showcase glow />
       </motion.div>
 
       <h2 className="void-profile-name">{state.profile.name}</h2>
       <p className="void-profile-rank">{state.profile.rank}</p>
 
       <motion.div className="void-level-card" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
-        <div className="void-level-card__label">Spirit Level</div>
+        <div className="void-level-card__label">Aveno Level</div>
         <div className="void-level-card__row">
           <span className="void-level-card__level">Level {state.profile.level}</span>
           <span className="void-level-card__xp">
@@ -97,7 +98,7 @@ export default function ProfilePage() {
         <span className="void-menu-item__icon">
           <Shield size={18} />
         </span>
-        Security & Essence
+        Security & Privacy
         <ChevronRight size={18} className="void-menu-item__chevron" />
       </button>
       <button type="button" className="void-menu-item">
@@ -116,23 +117,23 @@ export default function ProfilePage() {
         <span className="void-menu-item__icon">
           <LogOut size={18} />
         </span>
-        Sunder Connection
+        Log out
         <ChevronRight size={18} className="void-menu-item__chevron" />
       </a>
 
       <Drawer open={editOpen} onClose={() => setEditOpen(false)}>
         <div className="void-drawer__body">
           <h2 className="void-drawer__title void-drawer__title--lg">Edit Profile</h2>
-          <label className="void-label">Void Name</label>
+          <label className="void-label">Display name</label>
           <input className="void-input void-input--pill" value={name} onChange={(e) => setName(e.target.value)} />
-          <label className="void-label">Ethereal Rank</label>
+          <label className="void-label">Title</label>
           <input className="void-input void-input--pill" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <label className="void-label">Essence Link</label>
+          <label className="void-label">Email</label>
           <input className="void-input void-input--pill" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
         <div className="void-drawer__footer-cta">
           <button type="button" className="void-btn void-btn--initiate" onClick={saveProfile}>
-            Save Identity
+            Save changes
           </button>
         </div>
       </Drawer>

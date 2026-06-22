@@ -1,6 +1,8 @@
-from datetime import date, datetime
-from uuid import UUID
+from datetime import date, datetime, timedelta, timezone
 
+from sqlalchemy.orm import Session
+
+from app.models.focus_session import FocusSession
 from app.models.project import Project
 from app.models.task import Task
 from app.models.user import User
@@ -41,9 +43,12 @@ def task_to_dict(t: Task) -> dict:
         "projectId": str(t.project_id) if t.project_id else None,
         "dueDate": t.due_date.isoformat(),
         "priority": t.priority,
+        "difficulty": t.difficulty,
+        "importance": t.importance,
         "status": t.status,
         "estimatedMinutes": t.estimated_minutes,
         "loggedMinutes": t.logged_minutes,
+        "completedAt": t.completed_at.isoformat() if t.completed_at else None,
         "attachments": t.attachments or [],
         "createdAt": t.created_at.isoformat() if t.created_at else date.today().isoformat(),
     }
@@ -56,7 +61,33 @@ def state_from_user(user: User) -> dict:
         "tasks": [task_to_dict(t) for t in user.tasks],
         "activeTimerTaskId": str(user.active_timer_task_id) if user.active_timer_task_id else None,
         "timerStartedAt": int(user.timer_started_at.timestamp() * 1000) if user.timer_started_at else None,
+        "timerAccumulatedSeconds": user.timer_accumulated_seconds or 0,
     }
+
+
+def timer_elapsed_seconds(user: User) -> int:
+    total = user.timer_accumulated_seconds or 0
+    if user.timer_started_at:
+        total += int((datetime.now(timezone.utc) - user.timer_started_at).total_seconds())
+    return max(0, total)
+
+
+def flush_timer(user: User, task: Task, db: Session, *, completed: bool = False) -> int:
+    total_seconds = timer_elapsed_seconds(user)
+    if total_seconds < 1:
+        user.timer_accumulated_seconds = 0
+        user.active_timer_task_id = None
+        user.timer_started_at = None
+        return 0
+    ended = datetime.now(timezone.utc)
+    started = ended - timedelta(seconds=total_seconds)
+    minutes = log_focus_session(db, user, task, started, ended, completed=completed)
+    task.logged_minutes += minutes
+    user.total_focus_minutes += minutes
+    user.timer_accumulated_seconds = 0
+    user.active_timer_task_id = None
+    user.timer_started_at = None
+    return minutes
 
 
 XP_BY_PRIORITY = {"critical": 120, "high": 80, "medium": 50, "low": 30}
@@ -71,6 +102,41 @@ def award_xp(user: User, amount: int) -> None:
     user.completed_tasks += 1
 
 
+def log_focus_session(
+    db: Session,
+    user: User,
+    task: Task,
+    started_at: datetime | None,
+    ended_at: datetime,
+    *,
+    completed: bool = False,
+) -> int:
+    if not started_at:
+        return 0
+    minutes = max(1, int((ended_at - started_at).total_seconds() // 60))
+    project_name = ""
+    if task.project_id and task.project:
+        project_name = task.project.name
+    elif task.project_id:
+        project = db.query(Project).filter(Project.id == task.project_id).first()
+        project_name = project.name if project else ""
+
+    db.add(
+        FocusSession(
+            user_id=user.id,
+            task_id=task.id,
+            project_id=task.project_id,
+            task_title=task.title,
+            project_name=project_name,
+            started_at=started_at,
+            ended_at=ended_at,
+            minutes=minutes,
+            completed=completed,
+        )
+    )
+    return minutes
+
+
 def seed_demo_data(user: User) -> None:
     if user.projects:
         return
@@ -79,7 +145,7 @@ def seed_demo_data(user: User) -> None:
     p1 = Project(
         user_id=user.id,
         name="System Architecture",
-        description="Core void engine structure and mana-flow protocols.",
+        description="Core architecture and workflow protocols.",
         color="#8b5cf6",
         level=12,
         realm="network",
@@ -88,7 +154,7 @@ def seed_demo_data(user: User) -> None:
     p2 = Project(
         user_id=user.id,
         name="Nexus Protocol",
-        description="Cross-realm integrations and essence synchronization.",
+        description="Cross-project integrations and workflow sync.",
         color="#2dd4bf",
         level=8,
         realm="rocket",
@@ -96,8 +162,8 @@ def seed_demo_data(user: User) -> None:
     )
     p3 = Project(
         user_id=user.id,
-        name="Void Core",
-        description="Central spirit engine deployment.",
+        name="Aveno Core",
+        description="Central productivity engine deployment.",
         color="#2dd4bf",
         level=22,
         realm="core",
@@ -111,7 +177,7 @@ def seed_demo_data(user: User) -> None:
                 user_id=user.id,
                 project=p1,
                 title="Deep Work Protocol",
-                description="Complete the architectural audit of the Void Engine core.",
+                description="Complete the architectural audit of the Aveno core.",
                 due_date=today,
                 priority="critical",
                 attachments=["Blueprint.void", "Energy_Logs.txt"],
@@ -120,7 +186,7 @@ def seed_demo_data(user: User) -> None:
                 user_id=user.id,
                 project=p1,
                 title="Neural Path Mapping",
-                description="Map focus timer flows and spirit mood transitions.",
+                description="Map focus timer flows and productivity patterns.",
                 due_date=today,
                 priority="high",
                 status="in_progress",
@@ -138,8 +204,8 @@ def seed_demo_data(user: User) -> None:
             Task(
                 user_id=user.id,
                 project=p3,
-                title="Void Core Seal",
-                description="Finalize the central spirit engine deployment.",
+                title="Aveno Core Seal",
+                description="Finalize the central engine deployment.",
                 due_date=today,
                 priority="low",
                 status="done",
@@ -148,9 +214,9 @@ def seed_demo_data(user: User) -> None:
         ]
     )
 
-    user.name = user.name or "Grandmaster Void"
-    user.title = "Ethereal Rank: Tier VII"
-    user.rank = "ETHEREAL RANK: TIER VII"
+    user.name = user.name or "Aveno Pro"
+    user.title = "Aveno Rank: Tier VII"
+    user.rank = "AVENO RANK: TIER VII"
     user.level = 42
     user.xp = 2450
     user.xp_to_next = 3000

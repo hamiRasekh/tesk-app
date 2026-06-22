@@ -1,18 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ActiveFocusCard } from "@/components/void/ActiveFocusCard";
 import { AddProjectDrawer } from "@/components/void/AddProjectDrawer";
 import { AppHeader } from "@/components/void/AppHeader";
-import { ProjectDrawer } from "@/components/void/ProjectDrawer";
 import { QuestCard } from "@/components/void/QuestCard";
 import { isToday, useVoid } from "@/lib/void-store";
-import type { Project } from "@/lib/void-types";
+import { useMemo, useState } from "react";
 
 export default function ProjectsPage() {
+  const router = useRouter();
   const { state } = useVoid();
-  const [selected, setSelected] = useState<Project | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
   const todayTasks = state.tasks.filter((t) => isToday(t.dueDate));
@@ -33,11 +31,6 @@ export default function ProjectsPage() {
     [state.projects, state.tasks]
   );
 
-  function openProject(p: Project) {
-    setSelected(p);
-    setDrawerOpen(true);
-  }
-
   return (
     <div className="void-shell">
       <AppHeader />
@@ -46,31 +39,34 @@ export default function ProjectsPage() {
         done={doneToday}
         total={todayTasks.length}
         mood="writing"
-        quote="Your spirit is forging paths across the realms."
+        quote="Momentum is building across your projects."
       />
 
       <div className="void-section-head">
-        <h2 className="void-section-head__title">Active Quests</h2>
+        <h2 className="void-section-head__title">Your projects</h2>
         <button type="button" className="void-btn void-btn--accent" onClick={() => setAddOpen(true)}>
           + New Project
         </button>
       </div>
 
       <div className="void-scroll-section">
-        {quests.map((q, i) => (
-          <QuestCard
-            key={q.project.id}
-            project={q.project}
-            remaining={q.remaining}
-            total={q.total}
-            complete={q.complete}
-            index={i}
-            onClick={() => openProject(q.project)}
-          />
-        ))}
+        {quests.length === 0 ? (
+          <p className="void-empty">No projects yet. Create one to group your tasks.</p>
+        ) : (
+          quests.map((q, i) => (
+            <QuestCard
+              key={q.project.id}
+              project={q.project}
+              remaining={q.remaining}
+              total={q.total}
+              complete={q.complete}
+              index={i}
+              onClick={() => router.push(`/dashboard/projects/${q.project.id}`)}
+            />
+          ))
+        )}
       </div>
 
-      <ProjectDrawer project={selected} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
       <AddProjectDrawer open={addOpen} onClose={() => setAddOpen(false)} />
     </div>
   );

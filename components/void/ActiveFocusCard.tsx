@@ -22,18 +22,12 @@ export function ActiveFocusCard({ done, total, mood = "idle", quote }: Props) {
       transition={{ duration: 0.45 }}
     >
       <div className="void-active-focus__spirit void-spirit-slot void-spirit-slot--card">
-        <VoidSpirit
-          variant={mood === "focused" ? "work" : "normal"}
-          mood={mood}
-          scale="sm"
-          showcase
-          glow
-        />
+        <VoidSpirit mood={mood} scale="lg" showcase glow />
       </div>
       <div className="void-active-focus__content">
-        <p className="void-active-focus__label">Active Focus</p>
+        <p className="void-active-focus__label">Today&apos;s progress</p>
         <p className="void-active-focus__quote">
-          {quote ?? "Discipline is the bridge to mastery."}
+          {quote ?? "Small steps every day build lasting discipline."}
         </p>
         <div className="void-stat__bar void-active-focus__bar">
           <motion.div

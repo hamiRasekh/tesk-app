@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from "next";
 import "../void-theme.css";
 import "./signup.css";
 
+import { APP_DESCRIPTION, APP_NAME } from "@/lib/brand";
+
 export const metadata: Metadata = {
-  title: "Void Spirit — Summon Account",
-  description: "Join the void and master your tasks."
+  title: `${APP_NAME} — Create Account`,
+  description: APP_DESCRIPTION
 };
 
 export const viewport: Viewport = {

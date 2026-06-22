@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronRight, Mail, Sparkles } from "lucide-react";
+import { ChevronRight, Lock, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
-import { apiLogin, setToken } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { apiLogin, getToken, isOfflineError, purgeLegacyDemoStorage, setToken } from "@/lib/api";
+import { loadCachedState } from "@/lib/offline-cache";
+import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { VoidSpirit } from "@/components/void/VoidSpirit";
 import { registerServiceWorker } from "../sw-register";
 
@@ -26,23 +29,40 @@ const fadeUp = {
 };
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    purgeLegacyDemoStorage();
     registerServiceWorker();
-  }, []);
+    if (getToken() && loadCachedState()) {
+      router.replace("/dashboard");
+    }
+  }, [router]);
+
+  const isValid = /\S+@\S+\.\S+/.test(email) && password.length >= 8;
 
   async function login() {
+    if (!isValid) return;
+    setError("");
+    setLoading(true);
     try {
-      const res = await apiLogin(email);
+      const res = await apiLogin(email, password);
       setToken(res.access_token);
-    } catch {
-      // offline demo fallback
+      window.location.href = "/dashboard";
+    } catch (err) {
+      if (isOfflineError(err)) {
+        setError("You are offline. Connect to the internet to sign in.");
+      } else {
+        setError(err instanceof Error ? err.message : "Login failed. Check your credentials.");
+      }
+    } finally {
+      setLoading(false);
     }
-    window.location.href = "/dashboard";
   }
-
-  const isValid = /\S+@\S+\.\S+/.test(email);
 
   return (
     <>
@@ -72,7 +92,6 @@ export default function LoginPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6 }}
         >
-          {/* Spirit character */}
           <motion.div
             className="void-spirit-stage void-spirit-slot void-spirit-slot--login"
             custom={0}
@@ -80,40 +99,54 @@ export default function LoginPage() {
             initial="hidden"
             animate="visible"
           >
-            <VoidSpirit variant="hello" scale="xl" showcase glow />
+            <VoidSpirit variant="hello" scale="lg" showcase glow />
             <div className="void-spirit-pedestal" />
           </motion.div>
 
           <motion.h1 className="void-heading" custom={1} variants={fadeUp} initial="hidden" animate="visible">
-            Welcome to the Void
+            Welcome to {APP_NAME}
           </motion.h1>
           <motion.p className="void-tagline" custom={2} variants={fadeUp} initial="hidden" animate="visible">
-            Master your tasks, conquer your spirit.
+            {APP_TAGLINE}
           </motion.p>
 
           <motion.div className="void-form" custom={3} variants={fadeUp} initial="hidden" animate="visible">
             <div className="void-input-wrap">
-              <Mail className="void-input-icon" size={20} />
+              <Mail className="void-input-icon" size={22} strokeWidth={2} />
               <input
                 className="void-input"
                 type="email"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && isValid) login();
-                }}
                 autoComplete="email"
               />
             </div>
 
+            <div className="void-input-wrap">
+              <Lock className="void-input-icon" size={22} strokeWidth={2} />
+              <input
+                className="void-input"
+                type="password"
+                placeholder="Password (min. 8 characters)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && isValid && !loading) void login();
+                }}
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error ? <p className="void-form-error">{error}</p> : null}
+
             <motion.button
               className="void-cta"
-              disabled={!isValid}
-              onClick={login}
-              whileHover={isValid ? { scale: 1.01 } : undefined}
+              disabled={!isValid || loading}
+              onClick={() => void login()}
+              whileHover={isValid && !loading ? { scale: 1.01 } : undefined}
               animate={
-                isValid
+                isValid && !loading
                   ? {
                       boxShadow: [
                         "0 0 20px rgba(207, 189, 255, 0.3)",
@@ -126,7 +159,7 @@ export default function LoginPage() {
               transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
             >
               <span className="void-cta__shine" />
-              <span className="void-cta__label">Start Journey</span>
+              <span className="void-cta__label">{loading ? "Entering..." : "Start Journey"}</span>
             </motion.button>
           </motion.div>
 
@@ -138,33 +171,12 @@ export default function LoginPage() {
             animate="visible"
           >
             <Link className="void-signup-link" href="/signup">
-              New across the void? <strong>Summon Account</strong>
-              <ChevronRight size={16} />
+              New to {APP_NAME}? <strong>Create account</strong>
+              <ChevronRight size={18} strokeWidth={2.5} />
             </Link>
-            <p className="void-legal">By entering, you accept the Cosmic Laws</p>
           </motion.footer>
         </motion.div>
       </main>
-
-      <motion.aside
-        className="void-corner-widget"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 0.2, x: 0 }}
-        transition={{ delay: 1.2, duration: 0.6 }}
-        whileHover={{ opacity: 1 }}
-      >
-        <div className="void-corner-widget__panel">
-          <div className="void-corner-widget__ring">
-            <div className="void-corner-widget__inner">
-              <Sparkles size={20} />
-            </div>
-          </div>
-          <div>
-            <p className="void-corner-widget__title">AI Synthesis Active</p>
-            <p className="void-corner-widget__sub">NEURAL ENGINE LOADED</p>
-          </div>
-        </div>
-      </motion.aside>
     </>
   );
 }

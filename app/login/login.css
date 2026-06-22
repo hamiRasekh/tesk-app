@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap");
+@import "../void-scrollbar.css";
 
 .void-login-root {
   --void-bg: #131317;
@@ -259,26 +260,41 @@ body:has(.void-login-root) .device-shell {
 
 .void-input-icon {
   position: absolute;
-  left: 1rem;
+  left: 1.1rem;
   top: 50%;
   transform: translateY(-50%);
   color: var(--void-outline);
   pointer-events: none;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 
 .void-input {
   width: 100%;
-  padding: 1rem 1rem 1rem 3rem;
+  padding: 1.05rem 1rem 1.05rem 3.25rem;
   border: none;
   background: transparent;
   color: var(--void-on-surface);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.875rem;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: clamp(0.95rem, 2.8vw, 1.05rem);
   outline: none;
 }
 
 .void-input::placeholder {
   color: rgba(148, 141, 162, 0.6);
+}
+
+.void-form-error {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 107, 138, 0.12);
+  border: 1px solid rgba(255, 107, 138, 0.35);
+  color: #ff8fa8;
+  font-size: clamp(0.85rem, 2.6vw, 0.95rem);
+  line-height: 1.4;
+  text-align: center;
 }
 
 /* ── CTA button ── */

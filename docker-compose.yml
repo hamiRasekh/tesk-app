@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: void-spirit-db
+    container_name: aveno-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: void
@@ -21,12 +21,12 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: void-spirit-api
+    container_name: aveno-api
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://void:void@db:5432/void_spirit
-      SECRET_KEY: void-spirit-docker-secret-key
-      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://web:3000
+      SECRET_KEY: aveno-docker-secret-key
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://0.0.0.0:3000
     ports:
       - "8000:8000"
     depends_on:
@@ -38,11 +38,11 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000
-    container_name: void-spirit-web
+        API_INTERNAL_URL: http://api:8000
+    container_name: aveno-web
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      API_INTERNAL_URL: http://api:8000
     ports:
       - "3000:3000"
     depends_on:

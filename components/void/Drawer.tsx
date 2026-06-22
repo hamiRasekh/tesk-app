@@ -1,7 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 type Props = {
   open: boolean;
@@ -10,7 +11,13 @@ type Props = {
 };
 
 export function Drawer({ open, onClose, children }: Props) {
-  return (
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -23,18 +30,21 @@ export function Drawer({ open, onClose, children }: Props) {
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          <motion.div
-            className="void-drawer"
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 320 }}
-          >
-            <div className="void-drawer__handle" />
-            {children}
-          </motion.div>
+          <div className="void-drawer-anchor">
+            <motion.div
+              className="void-drawer"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 340 }}
+            >
+              <div className="void-drawer__handle" />
+              {children}
+            </motion.div>
+          </div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

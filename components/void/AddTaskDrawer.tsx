@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import { Drawer } from "./Drawer";
+import { ScaleSlider } from "./ScaleSlider";
+import { TimeDial, timeToEstimatedMinutes } from "./TimeDial";
+import { VoidSelect } from "./VoidSelect";
 import { useVoid } from "@/lib/void-store";
-import type { Priority } from "@/lib/void-types";
+import { importanceToPriority } from "@/lib/void-utils";
+import { toLocalDateStr } from "@/lib/void-utils";
 
 type Props = {
   open: boolean;
@@ -16,32 +20,57 @@ export function AddTaskDrawer({ open, onClose, defaultProjectId = null, defaultD
   const { state, addTask } = useVoid();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<Priority>("medium");
+  const [difficulty, setDifficulty] = useState(5);
+  const [importance, setImportance] = useState(6);
   const [projectId, setProjectId] = useState<string | "">(defaultProjectId ?? "");
-  const [estimatedMinutes, setEstimatedMinutes] = useState("45");
+  const [dueDate, setDueDate] = useState(defaultDate ?? toLocalDateStr(new Date()));
+  const [hours, setHours] = useState(0);
+  const [minutes, setMinutes] = useState(0);
+  const [timeTouched, setTimeTouched] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const estimatedMinutes = timeToEstimatedMinutes(hours, minutes);
+  const timeValid = timeTouched && estimatedMinutes >= 5;
 
   function reset() {
     setTitle("");
     setDescription("");
-    setPriority("medium");
+    setDifficulty(5);
+    setImportance(6);
     setProjectId(defaultProjectId ?? "");
-    setEstimatedMinutes("45");
+    setDueDate(defaultDate ?? toLocalDateStr(new Date()));
+    setHours(0);
+    setMinutes(0);
+    setTimeTouched(false);
+    setSaving(false);
   }
 
-  function submit() {
-    if (!title.trim()) return;
-    void addTask({
-      title: title.trim(),
-      description: description.trim(),
-      priority,
-      projectId: projectId || null,
-      dueDate: defaultDate ?? new Date().toISOString().slice(0, 10),
-      estimatedMinutes: Number(estimatedMinutes) || 30,
-      attachments: []
-    }).then(() => {
+  function handleTimeChange(h: number, m: number) {
+    setHours(h);
+    setMinutes(m);
+    setTimeTouched(true);
+  }
+
+  async function submit() {
+    if (!title.trim() || !timeValid || saving) return;
+    setSaving(true);
+    try {
+      await addTask({
+        title: title.trim(),
+        description: description.trim(),
+        priority: importanceToPriority(importance),
+        difficulty,
+        importance,
+        projectId: projectId || null,
+        dueDate,
+        estimatedMinutes,
+        attachments: []
+      });
       reset();
       onClose();
-    });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -52,53 +81,63 @@ export function AddTaskDrawer({ open, onClose, defaultProjectId = null, defaultD
         onClose();
       }}
     >
-      <div className="void-drawer__body">
-        <p className="void-section-title">Summon Task</p>
-        <h2 className="void-drawer__title" style={{ marginBottom: 16 }}>
-          New quest for today
-        </h2>
+      <div className="void-drawer__body void-task-form">
+        <p className="void-section-title">New task</p>
+        <h2 className="void-drawer__title void-task-form__title">Add a task to your day</h2>
 
-        <label className="void-label">Quest Name</label>
-        <input className="void-input void-input--pill" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Enter task name..." />
-
-        <label className="void-label">Protocol</label>
+        <label className="void-label">Task name</label>
         <input
-          className="void-input void-input--pill"
+          className="void-input void-input--pill void-task-form__input"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="What do you need to do?"
+        />
+
+        <label className="void-label">Description</label>
+        <input
+          className="void-input void-input--pill void-task-form__input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="What must be done?"
+          placeholder="Optional details or notes"
         />
 
-        <label className="void-label">Priority</label>
-        <select className="void-select" value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
-          <option value="critical">Critical</option>
-          <option value="high">High</option>
-          <option value="medium">Medium</option>
-          <option value="low">Low</option>
-        </select>
-
-        <label className="void-label">Realm / Project</label>
-        <select className="void-select" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-          <option value="">No realm</option>
-          {state.projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-
-        <label className="void-label">Duration (min)</label>
+        <label className="void-label">Due date</label>
         <input
-          className="void-input void-input--pill"
-          type="number"
-          min={5}
-          value={estimatedMinutes}
-          onChange={(e) => setEstimatedMinutes(e.target.value)}
+          type="date"
+          className="void-input void-input--pill void-task-form__input"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
         />
+
+        <ScaleSlider label="Difficulty" value={difficulty} onChange={setDifficulty} />
+        <ScaleSlider label="Importance" value={importance} onChange={setImportance} />
+
+        <label className="void-label">Project</label>
+        <VoidSelect
+          className="void-task-form__select"
+          value={projectId}
+          onChange={setProjectId}
+          placeholder="No project"
+          options={[
+            { value: "", label: "No project" },
+            ...state.projects.map((p) => ({ value: p.id, label: p.name, color: p.color }))
+          ]}
+        />
+
+        <TimeDial hours={hours} minutes={minutes} onChange={handleTimeChange} />
+        {!timeTouched && <p className="void-form-hint void-form-hint--warn">Set estimated time on the dial (required).</p>}
+        {timeTouched && estimatedMinutes < 5 && (
+          <p className="void-form-hint void-form-hint--warn">Minimum estimate is 5 minutes.</p>
+        )}
       </div>
       <div className="void-drawer__footer-cta">
-        <button type="button" className="void-btn void-btn--initiate" onClick={submit}>
-          Initiate Quest
+        <button
+          type="button"
+          className="void-btn void-btn--initiate void-task-form__submit"
+          disabled={!title.trim() || !timeValid || saving}
+          onClick={() => void submit()}
+        >
+          {saving ? "Saving…" : "Create task"}
         </button>
       </div>
     </Drawer>

@@ -1,7 +1,7 @@
 import uuid
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import Date, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,11 +20,15 @@ class Task(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     due_date: Mapped[date] = mapped_column(Date, nullable=False)
     priority: Mapped[str] = mapped_column(String(16), default="medium")
+    difficulty: Mapped[int] = mapped_column(Integer, default=5)
+    importance: Mapped[int] = mapped_column(Integer, default=5)
     status: Mapped[str] = mapped_column(String(16), default="pending")
     estimated_minutes: Mapped[int] = mapped_column(Integer, default=30)
     logged_minutes: Mapped[int] = mapped_column(Integer, default=0)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     attachments: Mapped[list] = mapped_column(JSONB, default=list)
     created_at: Mapped[date] = mapped_column(Date, server_default=func.current_date())
 
     user: Mapped["User"] = relationship(back_populates="tasks")
     project: Mapped["Project | None"] = relationship(back_populates="tasks")
+    focus_sessions: Mapped[list["FocusSession"]] = relationship(back_populates="task", cascade="all, delete-orphan")

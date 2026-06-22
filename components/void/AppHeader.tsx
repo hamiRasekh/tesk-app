@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Search } from "lucide-react";
 import { Drawer } from "./Drawer";
 import { useVoid } from "@/lib/void-store";
+import { projectColorFor, TaskIndicators } from "./TaskIndicators";
+
+import { APP_NAME } from "@/lib/brand";
 
 export function AppHeader() {
   const { state } = useVoid();
@@ -22,8 +25,8 @@ export function AppHeader() {
     <>
       <header className="void-topbar">
         <div className="void-topbar__brand">
-          <img src="/normal-1.png" alt="" className="void-topbar__logo" />
-          <span className="void-topbar__name">Void Spirit</span>
+          <img src="/logo.png" alt={APP_NAME} className="void-topbar__logo" />
+          <span className="void-topbar__name">{APP_NAME}</span>
         </div>
         <button type="button" className="void-topbar__search" aria-label="Search" onClick={() => setSearchOpen(true)}>
           <Search size={20} />
@@ -32,18 +35,18 @@ export function AppHeader() {
 
       <Drawer open={searchOpen} onClose={() => setSearchOpen(false)}>
         <div className="void-drawer__body">
-          <h2 className="void-drawer__title">Search Essences</h2>
+          <h2 className="void-drawer__title">Search tasks</h2>
           <input
             className="void-input void-input--pill"
-            placeholder="Find quests, tasks..."
+            placeholder="Search by title or description..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
           />
-          {results.length === 0 && query && <p className="void-empty">No matches in the void.</p>}
+          {results.length === 0 && query && <p className="void-empty">No tasks found.</p>}
           {results.map((t) => (
             <div key={t.id} className="void-task-row" style={{ padding: "12px 0" }}>
-              <span className={`void-task-dot void-task-dot--${t.priority}`} />
+              <TaskIndicators task={t} projectColor={projectColorFor(state.projects, t.projectId)} compact />
               <span className="void-task-row__title">{t.title}</span>
             </div>
           ))}

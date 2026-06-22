@@ -1,8 +1,10 @@
+from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
+from app.analytics.project_analytics import build_project_analytics
 from app.database import get_db
 from app.deps import get_current_user
 from app.models.project import Project
@@ -32,6 +34,21 @@ def create_project(payload: ProjectCreate, user: User = Depends(get_current_user
     db.commit()
     db.refresh(project)
     return project_to_dict(project)
+
+
+@router.get("/{project_id}/analytics")
+def project_analytics(
+    project_id: UUID,
+    period: str = Query("week", pattern="^(week|month|quarter|year|all)$"),
+    date_from: date | None = Query(None, alias="from"),
+    date_to: date | None = Query(None, alias="to"),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    project = db.query(Project).filter(Project.id == project_id, Project.user_id == user.id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return build_project_analytics(db, project, period=period, date_from=date_from, date_to=date_to)
 
 
 @router.patch("/{project_id}")

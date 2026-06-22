@@ -1,0 +1,114 @@
+/* Aveno — minimal overlay-style scrollbars */
+
+:root {
+  --aveno-scrollbar-size: 3px;
+  --aveno-scrollbar-thumb: rgba(138, 92, 245, 0.22);
+  --aveno-scrollbar-thumb-hover: rgba(138, 92, 245, 0.42);
+}
+
+html:has(.void-app),
+html:has(.void-login-root),
+html:has(.void-signup-root),
+body:has(.void-app),
+body:has(.void-login-root),
+body:has(.void-signup-root),
+.void-app,
+.void-login-root,
+.void-signup-root,
+.void-drawer__body,
+.void-scroll-section,
+.void-select-field__menu,
+.void-signup__body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--aveno-scrollbar-thumb) transparent;
+}
+
+body:has(.void-app) *,
+body:has(.void-login-root) *,
+body:has(.void-signup-root) * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--aveno-scrollbar-thumb) transparent;
+}
+
+html:has(.void-app) ::-webkit-scrollbar,
+html:has(.void-login-root) ::-webkit-scrollbar,
+html:has(.void-signup-root) ::-webkit-scrollbar,
+body:has(.void-app) ::-webkit-scrollbar,
+body:has(.void-login-root) ::-webkit-scrollbar,
+body:has(.void-signup-root) ::-webkit-scrollbar,
+.void-app ::-webkit-scrollbar,
+.void-login-root ::-webkit-scrollbar,
+.void-signup-root ::-webkit-scrollbar {
+  width: var(--aveno-scrollbar-size);
+  height: var(--aveno-scrollbar-size);
+}
+
+html:has(.void-app) ::-webkit-scrollbar-track,
+html:has(.void-login-root) ::-webkit-scrollbar-track,
+html:has(.void-signup-root) ::-webkit-scrollbar-track,
+body:has(.void-app) ::-webkit-scrollbar-track,
+body:has(.void-login-root) ::-webkit-scrollbar-track,
+body:has(.void-signup-root) ::-webkit-scrollbar-track,
+.void-app ::-webkit-scrollbar-track,
+.void-login-root ::-webkit-scrollbar-track,
+.void-signup-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html:has(.void-app) ::-webkit-scrollbar-thumb,
+html:has(.void-login-root) ::-webkit-scrollbar-thumb,
+html:has(.void-signup-root) ::-webkit-scrollbar-thumb,
+body:has(.void-app) ::-webkit-scrollbar-thumb,
+body:has(.void-login-root) ::-webkit-scrollbar-thumb,
+body:has(.void-signup-root) ::-webkit-scrollbar-thumb,
+.void-app ::-webkit-scrollbar-thumb,
+.void-login-root ::-webkit-scrollbar-thumb,
+.void-signup-root ::-webkit-scrollbar-thumb {
+  background: var(--aveno-scrollbar-thumb);
+  border-radius: 999px;
+}
+
+html:has(.void-app) ::-webkit-scrollbar-thumb:hover,
+html:has(.void-login-root) ::-webkit-scrollbar-thumb:hover,
+html:has(.void-signup-root) ::-webkit-scrollbar-thumb:hover,
+body:has(.void-app) ::-webkit-scrollbar-thumb:hover,
+body:has(.void-login-root) ::-webkit-scrollbar-thumb:hover,
+body:has(.void-signup-root) ::-webkit-scrollbar-thumb:hover,
+.void-app ::-webkit-scrollbar-thumb:hover,
+.void-login-root ::-webkit-scrollbar-thumb:hover,
+.void-signup-root ::-webkit-scrollbar-thumb:hover {
+  background: var(--aveno-scrollbar-thumb-hover);
+}
+
+html:has(.void-app) ::-webkit-scrollbar-corner,
+html:has(.void-login-root) ::-webkit-scrollbar-corner,
+html:has(.void-signup-root) ::-webkit-scrollbar-corner,
+body:has(.void-app) ::-webkit-scrollbar-corner,
+body:has(.void-login-root) ::-webkit-scrollbar-corner,
+body:has(.void-signup-root) ::-webkit-scrollbar-corner,
+.void-app ::-webkit-scrollbar-corner,
+.void-login-root ::-webkit-scrollbar-corner,
+.void-signup-root ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+html:has(.void-app) ::-webkit-scrollbar-button,
+html:has(.void-login-root) ::-webkit-scrollbar-button,
+html:has(.void-signup-root) ::-webkit-scrollbar-button,
+body:has(.void-app) ::-webkit-scrollbar-button,
+body:has(.void-login-root) ::-webkit-scrollbar-button,
+body:has(.void-signup-root) ::-webkit-scrollbar-button,
+.void-app ::-webkit-scrollbar-button,
+.void-login-root ::-webkit-scrollbar-button,
+.void-signup-root ::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Drawer scroll — thin bar sits on the edge */
+.void-drawer__body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: auto;
+}
