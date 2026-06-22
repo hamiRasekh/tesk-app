@@ -1,0 +1,218 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap");
+
+.void-signup-root {
+  min-height: 100dvh;
+  background: #0d0b14;
+  color: #e4e1e7;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+body:has(.void-signup-root) {
+  background: #050508 !important;
+}
+
+body:has(.void-signup-root) .device-shell {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  width: 100%;
+  min-height: 100dvh;
+  max-height: none;
+}
+
+@media (min-width: 520px) {
+  body:has(.void-signup-root) {
+    padding: 0;
+    display: block;
+  }
+}
+
+.void-signup {
+  min-height: 100dvh;
+  padding: max(16px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.void-signup__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+}
+
+.void-signup__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  color: #cfbdff;
+}
+
+.void-signup__brand img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(124, 58, 237, 0.5));
+}
+
+.void-signup__progress {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.void-signup__progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6200ee, #7c3aed);
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+  transition: width 0.3s ease;
+}
+
+.void-signup__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: 12px 0;
+}
+
+.void-signup h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 8vw, 2.2rem);
+  color: #cfbdff;
+  line-height: 1.1;
+}
+
+.void-signup p {
+  margin: 10px 0 0;
+  color: #cbc3d9;
+  line-height: 1.5;
+}
+
+.void-signup .void-input,
+.void-signup .void-select {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(31, 31, 35, 0.6);
+  color: #e4e1e7;
+  font: inherit;
+  outline: none;
+  margin-top: 8px;
+}
+
+.void-signup .void-label {
+  display: block;
+  font-size: 0.72rem;
+  font-family: "JetBrains Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #948da2;
+}
+
+.void-signup .void-choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.void-signup .void-choice {
+  min-height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #e4e1e7;
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-align: left;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.void-signup .void-choice[data-selected="true"] {
+  border-color: #7c3aed;
+  background: rgba(124, 58, 237, 0.15);
+  box-shadow: 0 0 16px rgba(124, 58, 237, 0.2);
+}
+
+.void-signup__footer {
+  display: grid;
+  gap: 10px;
+}
+
+.void-signup .void-btn-primary {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 999px;
+  background: #6200ee;
+  color: #cfbdff;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(98, 0, 238, 0.35);
+}
+
+.void-signup .void-btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.void-signup .void-link {
+  text-align: center;
+  color: #948da2;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+}
+
+.void-signup .void-link strong {
+  color: #cfbdff;
+}
+
+.void-signup .void-spirit-wrap {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  overflow: visible;
+}
+
+.void-signup .void-success {
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 20px;
+  background: rgba(31, 31, 35, 0.6);
+}
+
+.void-signup .void-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: rgba(124, 58, 237, 0.2);
+  color: #cfbdff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 4px;
+}
+
+.void-signup .void-back {
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbc3d9;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}

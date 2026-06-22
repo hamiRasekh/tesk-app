@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: void-spirit-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: void
+      POSTGRES_PASSWORD: void
+      POSTGRES_DB: void_spirit
+    ports:
+      - "5432:5432"
+    volumes:
+      - void_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U void -d void_spirit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: void-spirit-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://void:void@db:5432/void_spirit
+      SECRET_KEY: void-spirit-docker-secret-key
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://web:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    container_name: void-spirit-web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  void_pg_data:
