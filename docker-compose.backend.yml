@@ -1,5 +1,5 @@
-# Production — public web on port 3314 (API + DB internal only)
-# Usage: docker compose -f docker-compose.prod.yml --env-file .env up --build -d
+# Backend + DB only — frontend runs on host via npm (scripts/deploy-frontend.sh)
+# Usage: docker compose -f docker-compose.backend.yml --env-file .env up --build -d
 
 services:
   db:
@@ -31,6 +31,8 @@ services:
       SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-525600}
       CORS_ORIGINS: ${PUBLIC_URL:?Set PUBLIC_URL in .env}
+    ports:
+      - "127.0.0.1:8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -42,28 +44,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 25s
-
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        API_INTERNAL_URL: http://api:8000
-        NPM_REGISTRY: ${NPM_REGISTRY:-https://mirror-npm.runflare.com}
-    container_name: aveno-web
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      HOSTNAME: 0.0.0.0
-      API_INTERNAL_URL: http://api:8000
-    ports:
-      - "${APP_PORT:-3314}:3000"
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - aveno_internal
 
 networks:
   aveno_internal:
