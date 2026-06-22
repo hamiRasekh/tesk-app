@@ -303,7 +303,9 @@
   font-size: var(--void-text-sm);
   padding: 18px 16px;
   min-height: 54px;
+  width: 100%;
   box-shadow: 0 0 28px rgba(167, 139, 250, 0.45);
+  touch-action: manipulation;
 }
 
 .void-input--pill {
@@ -642,6 +644,8 @@
   padding: 14px 20px max(20px, env(safe-area-inset-bottom));
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .void-task-form .void-section-title {

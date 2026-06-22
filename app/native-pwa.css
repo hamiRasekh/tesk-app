@@ -12,6 +12,7 @@ html[data-aveno-standalone] body {
   overscroll-behavior: none;
   background: #0d0b14 !important;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 html[data-aveno-standalone] .device-shell {
@@ -31,19 +32,38 @@ html[data-aveno-standalone] body {
   display: block !important;
 }
 
-/* Safe areas — edge-to-edge like native apps */
+/* Status bar — solid bar matching app (no browser chrome look) */
+html[data-aveno-standalone]::before,
+html[data-aveno-pwa]::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top, 0px);
+  background: #0d0b14;
+  z-index: 100000;
+  pointer-events: none;
+}
+
+html[data-aveno-standalone] .void-topbar,
+html[data-aveno-pwa] .void-topbar {
+  padding-top: env(safe-area-inset-top, 0px);
+  margin-top: calc(-1 * env(safe-area-inset-top, 0px));
+  background: #0d0b14;
+}
+
 html[data-aveno-standalone] .void-app,
 html[data-aveno-standalone] .void-login,
 html[data-aveno-standalone] .void-login-root,
-html[data-aveno-standalone] .void-signup-root {
+html[data-aveno-standalone] .void-signup-root,
+html[data-aveno-pwa] .void-app {
   min-height: 100dvh;
-  padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
 
-/* No browser-like text selection on chrome UI */
 html[data-aveno-standalone] .void-topbar,
 html[data-aveno-standalone] .void-bottom-nav,
 html[data-aveno-standalone] .void-stat-card,
@@ -52,7 +72,6 @@ html[data-aveno-standalone] .void-nav-item {
   user-select: none;
 }
 
-/* Inputs stay selectable */
 html[data-aveno-standalone] input,
 html[data-aveno-standalone] textarea,
 html[data-aveno-standalone] [contenteditable="true"] {
@@ -60,12 +79,29 @@ html[data-aveno-standalone] [contenteditable="true"] {
   user-select: text;
 }
 
-/* Standalone via CSS media (Android/desktop installed PWA) */
+/* Installed PWA — Android / iOS standalone & fullscreen */
 @media (display-mode: standalone), (display-mode: fullscreen) {
   html,
   body {
     overscroll-behavior: none;
     background: #0d0b14 !important;
+    touch-action: manipulation;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  html::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top, 0px);
+    background: #0d0b14;
+    z-index: 100000;
+    pointer-events: none;
   }
 
   body {
@@ -82,16 +118,23 @@ html[data-aveno-standalone] [contenteditable="true"] {
     box-shadow: none !important;
     background: #0d0b14 !important;
   }
+
+  .void-pwa-install {
+    display: none !important;
+  }
 }
 
-html[data-aveno-standalone] .void-pwa-install {
+html[data-aveno-standalone] .void-pwa-install,
+html[data-aveno-pwa] .void-pwa-install {
   display: none !important;
 }
 
-/* Status bar blends with app — no light browser chrome */
-html[data-aveno-standalone] {
+html[data-aveno-standalone],
+html[data-aveno-pwa] {
   color-scheme: dark;
 }
+
+/* Mobile browser — edge-to-edge (still shows URL bar until HTTPS PWA install) */
 @media (max-width: 519px) {
   body {
     display: block !important;

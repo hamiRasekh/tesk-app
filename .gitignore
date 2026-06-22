@@ -4,6 +4,7 @@ out
 dist
 .env
 .env.local
+scripts/runtime.env
 __pycache__
 .venv
 *.pyc

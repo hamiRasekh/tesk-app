@@ -1,0 +1,52 @@
+/**
+ * Mobile keyboard — drawers and inputs sit above the keyboard (Telegram-like).
+ */
+
+:root {
+  --keyboard-inset: 0px;
+  --visual-viewport-height: 100dvh;
+  --visual-viewport-offset-top: 0px;
+}
+
+html[data-keyboard-open] .void-nav {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(110%);
+  transition: opacity 0.2s ease, transform 0.25s ease;
+}
+
+html[data-keyboard-open] .void-fab {
+  opacity: 0;
+  pointer-events: none;
+}
+
+html[data-keyboard-open] .void-drawer-anchor {
+  bottom: var(--keyboard-inset, 0px);
+  transition: bottom 0.22s ease;
+}
+
+html[data-keyboard-open] .void-drawer {
+  max-height: min(calc(var(--visual-viewport-height, 100dvh) - 6px), 720px);
+}
+
+html[data-keyboard-open] .void-drawer__body {
+  scroll-padding-bottom: 20px;
+}
+
+html[data-keyboard-open] .void-input:focus,
+html[data-keyboard-open] .void-textarea:focus {
+  scroll-margin-bottom: calc(var(--keyboard-inset, 0px) + 72px);
+}
+
+html[data-keyboard-open] .void-login-root,
+html[data-keyboard-open] .void-signup-root,
+html[data-keyboard-open] .void-shell {
+  scroll-padding-bottom: calc(var(--keyboard-inset, 0px) + 24px);
+}
+
+@media (max-width: 519px) {
+  .void-input,
+  .void-textarea {
+    font-size: 16px;
+  }
+}

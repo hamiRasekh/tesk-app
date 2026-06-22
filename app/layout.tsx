@@ -10,13 +10,15 @@ export const metadata: Metadata = {
   applicationName: APP_NAME,
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/icon.png", type: "image/png" }],
-    apple: [{ url: "/icon.png", type: "image/png", sizes: "180x180" }]
+    icon: [{ url: "/icon.png", type: "image/png", sizes: "512x512" }],
+    apple: [{ url: "/icon.png", type: "image/png", sizes: "180x180" }],
+    shortcut: [{ url: "/icon.png", type: "image/png" }]
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
-    title: APP_NAME
+    statusBarStyle: "black",
+    title: APP_NAME,
+    startupImage: [{ url: "/icon.png" }]
   },
   formatDetection: {
     telephone: false,
@@ -26,15 +28,21 @@ export const metadata: Metadata = {
   other: {
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "black-translucent"
+    "apple-mobile-web-app-status-bar-style": "black",
+    "apple-mobile-web-app-title": APP_NAME
   }
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0d0b14",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0d0b14" },
+    { media: "(prefers-color-scheme: light)", color: "#0d0b14" }
+  ],
+  colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover"
 };
 
@@ -44,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fa" suppressHydrationWarning>
       <body>
         <AppProviders>
           <div className="device-shell">{children}</div>

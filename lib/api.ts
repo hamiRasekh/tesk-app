@@ -170,7 +170,7 @@ export async function apiGetState(): Promise<AppState> {
 }
 
 export async function apiCreateTask(body: Record<string, unknown>) {
-  return request("/api/tasks", { method: "POST", body: JSON.stringify(body) });
+  return request<import("./void-types").Task>("/api/tasks", { method: "POST", body: JSON.stringify(body) });
 }
 
 export async function apiUpdateTask(id: string, body: Record<string, unknown>) {
@@ -178,7 +178,7 @@ export async function apiUpdateTask(id: string, body: Record<string, unknown>) {
 }
 
 export async function apiCreateProject(body: Record<string, unknown>) {
-  return request("/api/projects", { method: "POST", body: JSON.stringify(body) });
+  return request<import("./void-types").Project>("/api/projects", { method: "POST", body: JSON.stringify(body) });
 }
 
 export async function apiUpdateProfile(body: Record<string, unknown>) {

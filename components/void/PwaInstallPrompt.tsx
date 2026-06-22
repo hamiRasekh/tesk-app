@@ -1,39 +1,40 @@
 "use client";
 
-import { Download, Share2, Smartphone, X } from "lucide-react";
+import { Download, ShieldAlert, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { APP_NAME } from "@/lib/brand";
 import { useLocale } from "@/lib/locale";
 import {
   dismissPwaPromptForSession,
-  isAndroidDevice,
   isIosDevice,
   isStandalonePwa,
+  runIosInstallFlow,
+  runNativeInstallPrompt,
   wasPwaPromptDismissedThisSession,
   type BeforeInstallPromptEvent
 } from "@/lib/pwa-install";
-import { registerServiceWorker } from "@/app/sw-register";
 
 export function PwaInstallPrompt() {
   const { isFa } = useLocale();
   const [open, setOpen] = useState(false);
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [installing, setInstalling] = useState(false);
+  const [secure, setSecure] = useState(true);
 
   const ios = isIosDevice();
-  const android = isAndroidDevice();
 
   useEffect(() => {
-    registerServiceWorker();
+    setSecure(window.isSecureContext);
+  }, []);
 
+  useEffect(() => {
     if (isStandalonePwa() || wasPwaPromptDismissedThisSession()) return;
-
-    setOpen(true);
 
     function onBeforeInstall(e: Event) {
       e.preventDefault();
       setInstallEvent(e as BeforeInstallPromptEvent);
+      setOpen(true);
     }
 
     function onInstalled() {
@@ -43,24 +44,42 @@ export function PwaInstallPrompt() {
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
+
+    let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
+    if (ios) {
+      fallbackTimer = setTimeout(() => setOpen(true), 600);
+    } else if (window.isSecureContext) {
+      fallbackTimer = setTimeout(() => {
+        if (!isStandalonePwa() && !installEvent) setOpen(true);
+      }, 2000);
+    } else {
+      fallbackTimer = setTimeout(() => setOpen(true), 800);
+    }
+
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
     };
-  }, []);
+  }, [ios, installEvent]);
 
   const install = useCallback(async () => {
-    if (!installEvent) return;
     setInstalling(true);
     try {
-      await installEvent.prompt();
-      const { outcome } = await installEvent.userChoice;
-      if (outcome === "accepted") setOpen(false);
-      setInstallEvent(null);
+      if (installEvent) {
+        const outcome = await runNativeInstallPrompt(installEvent);
+        if (outcome === "accepted") setOpen(false);
+        setInstallEvent(null);
+        return;
+      }
+
+      if (ios) {
+        await runIosInstallFlow(APP_NAME, window.location.href);
+      }
     } finally {
       setInstalling(false);
     }
-  }, [installEvent]);
+  }, [installEvent, ios]);
 
   function later() {
     dismissPwaPromptForSession();
@@ -69,7 +88,8 @@ export function PwaInstallPrompt() {
 
   if (!open) return null;
 
-  const canNativeInstall = Boolean(installEvent);
+  const canInstall = Boolean(installEvent) || ios;
+  const needsHttps = !secure && !ios;
 
   return (
     <AnimatePresence>
@@ -96,62 +116,34 @@ export function PwaInstallPrompt() {
 
             <div className="void-pwa-install__icon-wrap">
               <img src="/icon.png" alt="" className="void-pwa-install__icon" />
-              <span className="void-pwa-install__badge">
-                <Smartphone size={14} />
-              </span>
             </div>
 
-            <p className="void-pwa-install__eyebrow">{isFa ? "نصب سریع" : "Install now"}</p>
+            <p className="void-pwa-install__eyebrow">{isFa ? "نصب اپ" : "Install app"}</p>
             <h2 id="pwa-install-title" className="void-pwa-install__title">
-              {isFa ? `اپلیکیشن ${APP_NAME} را نصب کن` : `Install the ${APP_NAME} app`}
+              {isFa ? `${APP_NAME} — بدون مرورگر` : `${APP_NAME} — no browser bar`}
             </h2>
-            <p className="void-pwa-install__text">
-              {isFa
-                ? "برای تجربه بهتر، اعلان فوکوس و دسترسی آفلاین، همین الان اپ را روی گوشی نصب کن."
-                : "For the best experience, focus alerts, and offline access — add Aveno to your home screen now."}
-            </p>
 
-            {ios && (
-              <ol className="void-pwa-install__steps">
-                <li>
-                  <Share2 size={16} />
-                  <span>
-                    {isFa
-                      ? "دکمه Share (اشتراک‌گذاری) را در Safari بزن"
-                      : "Tap Share in Safari (bottom bar)"}
-                  </span>
-                </li>
-                <li>
-                  <Download size={16} />
-                  <span>
-                    {isFa ? "گزینه «Add to Home Screen» را انتخاب کن" : "Choose Add to Home Screen"}
-                  </span>
-                </li>
-                <li>
-                  <Smartphone size={16} />
-                  <span>{isFa ? "Add را بزن — تمام!" : "Tap Add — you're done!"}</span>
-                </li>
-              </ol>
-            )}
-
-            {!ios && !canNativeInstall && (
-              <p className="void-pwa-install__hint">
-                {android
-                  ? isFa
-                    ? "منوی مرورگر (⋮) → Install app یا Add to Home screen"
-                    : "Browser menu (⋮) → Install app or Add to Home screen"
-                  : isFa
-                    ? "از منوی مرورگر گزینه Install / Add to Home Screen را بزن"
-                    : "Use your browser menu: Install or Add to Home Screen"}
+            {needsHttps ? (
+              <p className="void-pwa-install__text void-pwa-install__text--warn">
+                <ShieldAlert size={16} style={{ verticalAlign: "middle", marginInlineEnd: 6 }} />
+                {isFa
+                  ? "روی HTTP نوار آدرس مرورگر همیشه نمایش داده می‌شود. برای تجربه اپلیکیشن واقعی (بدون نوار مرورگر) سایت باید HTTPS داشته باشد."
+                  : "On HTTP the browser address bar always shows. For a true native app (no URL bar), the site needs HTTPS."}
+              </p>
+            ) : (
+              <p className="void-pwa-install__text">
+                {isFa
+                  ? "اپ را نصب کن تا تمام‌صفحه و بدون نوار مرورگر باز شود."
+                  : "Install the app to open fullscreen without the browser UI."}
               </p>
             )}
 
             <div className="void-pwa-install__actions">
-              {canNativeInstall && (
+              {canInstall && !needsHttps && (
                 <button
                   type="button"
                   className="void-pwa-install__primary"
-                  disabled={installing}
+                  disabled={installing || (!installEvent && !ios)}
                   onClick={() => void install()}
                 >
                   <Download size={18} />
@@ -159,9 +151,13 @@ export function PwaInstallPrompt() {
                     ? isFa
                       ? "در حال نصب…"
                       : "Installing…"
-                    : isFa
-                      ? "نصب اپلیکیشن"
-                      : "Install app"}
+                    : !installEvent && !ios
+                      ? isFa
+                        ? "در حال آماده‌سازی…"
+                        : "Preparing…"
+                      : isFa
+                        ? "نصب اپلیکیشن"
+                        : "Install app"}
                 </button>
               )}
               <button type="button" className="void-pwa-install__later" onClick={later}>

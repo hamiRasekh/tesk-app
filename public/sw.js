@@ -1,4 +1,4 @@
-const CACHE_NAME = "aveno-v4";
+const CACHE_NAME = "aveno-v5";
 const APP_SHELL = [
   "/offline.html",
   "/manifest.webmanifest",

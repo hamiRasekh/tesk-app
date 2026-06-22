@@ -8,7 +8,5 @@ export function registerServiceWorker() {
   }
 
   registered = true;
-  window.addEventListener("load", () => {
-    void navigator.serviceWorker.register("/sw.js");
-  });
+  void navigator.serviceWorker.register("/sw.js", { scope: "/" });
 }

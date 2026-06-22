@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Drawer } from "./Drawer";
 import { ScaleSlider } from "./ScaleSlider";
 import { TimeDial, timeToEstimatedMinutes } from "./TimeDial";
 import { VoidSelect } from "./VoidSelect";
-import { VoidInput } from "./VoidInput";
+import { VoidInput, VoidTextarea } from "./VoidInput";
 import { LocaleDatePicker } from "./JalaliDatePicker";
 import { useVoid } from "@/lib/void-store";
 import { importanceToPriority } from "@/lib/void-utils";
@@ -19,6 +19,8 @@ type Props = {
   defaultDate?: string;
 };
 
+const DEFAULT_MINUTES = 30;
+
 export function AddTaskDrawer({ open, onClose, defaultProjectId = null, defaultDate }: Props) {
   const { state, addTask } = useVoid();
   const { isFa } = useLocale();
@@ -29,12 +31,21 @@ export function AddTaskDrawer({ open, onClose, defaultProjectId = null, defaultD
   const [projectId, setProjectId] = useState<string | "">(defaultProjectId ?? "");
   const [dueDate, setDueDate] = useState(defaultDate ?? toLocalDateStr(new Date()));
   const [hours, setHours] = useState(0);
-  const [minutes, setMinutes] = useState(0);
-  const [timeTouched, setTimeTouched] = useState(false);
+  const [minutes, setMinutes] = useState(DEFAULT_MINUTES);
+  const [timeTouched, setTimeTouched] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setProjectId(defaultProjectId ?? "");
+    if (defaultDate) setDueDate(defaultDate);
+  }, [open, defaultProjectId, defaultDate]);
 
   const estimatedMinutes = timeToEstimatedMinutes(hours, minutes);
-  const timeValid = timeTouched && estimatedMinutes >= 5;
+  const timeValid = estimatedMinutes >= 5;
+  const titleValid = Boolean(title.trim());
 
   function reset() {
     setTitle("");
@@ -44,20 +55,26 @@ export function AddTaskDrawer({ open, onClose, defaultProjectId = null, defaultD
     setProjectId(defaultProjectId ?? "");
     setDueDate(defaultDate ?? toLocalDateStr(new Date()));
     setHours(0);
-    setMinutes(0);
-    setTimeTouched(false);
+    setMinutes(DEFAULT_MINUTES);
+    setTimeTouched(true);
     setSaving(false);
+    setError(null);
+    setShowValidation(false);
   }
 
   function handleTimeChange(h: number, m: number) {
     setHours(h);
     setMinutes(m);
     setTimeTouched(true);
+    setShowValidation(false);
   }
 
   async function submit() {
-    if (!title.trim() || !timeValid || saving) return;
+    setShowValidation(true);
+    if (!titleValid || !timeValid || saving) return;
+
     setSaving(true);
+    setError(null);
     try {
       await addTask({
         title: title.trim(),
@@ -72,6 +89,8 @@ export function AddTaskDrawer({ open, onClose, defaultProjectId = null, defaultD
       });
       reset();
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : isFa ? "خطا در ساخت تسک" : "Could not create task");
     } finally {
       setSaving(false);
     }
@@ -85,64 +104,94 @@ export function AddTaskDrawer({ open, onClose, defaultProjectId = null, defaultD
         onClose();
       }}
     >
-      <div className="void-drawer__body void-task-form">
-        <p className="void-section-title">New task</p>
-        <h2 className="void-drawer__title void-task-form__title">Add a task to your day</h2>
+      <form
+        className="void-drawer__form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void submit();
+        }}
+      >
+        <div className="void-drawer__body void-task-form">
+          <p className="void-section-title">New task</p>
+          <h2 className="void-drawer__title void-task-form__title">Add a task to your day</h2>
 
-        <label className="void-label">Task name</label>
-        <VoidInput
-          className="void-input--pill void-task-form__input"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="What do you need to do?"
-        />
+          <label className="void-label" htmlFor="task-title">
+            Task name
+          </label>
+          <VoidInput
+            id="task-title"
+            className="void-input--pill void-task-form__input"
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setShowValidation(false);
+            }}
+            placeholder="What do you need to do?"
+            autoComplete="off"
+          />
+          {showValidation && !titleValid && (
+            <p className="void-form-hint void-form-hint--warn">
+              {isFa ? "نام تسک را وارد کنید." : "Enter a task name."}
+            </p>
+          )}
 
-        <label className="void-label">Description</label>
-        <VoidInput
-          className="void-input--pill void-task-form__input"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Optional details or notes"
-        />
+          <label className="void-label" htmlFor="task-description">
+            Description
+          </label>
+          <VoidTextarea
+            id="task-description"
+            className="void-input--pill void-task-form__input"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Optional details or notes"
+            rows={2}
+          />
 
-        <label className="void-label">Due date</label>
-        <LocaleDatePicker value={dueDate} onChange={setDueDate} className="void-task-form__input" />
+          <label className="void-label">Due date</label>
+          <LocaleDatePicker value={dueDate} onChange={setDueDate} className="void-task-form__input" />
 
-        <ScaleSlider label="Difficulty" value={difficulty} onChange={setDifficulty} />
-        <ScaleSlider label="Importance" value={importance} onChange={setImportance} />
+          <ScaleSlider label="Difficulty" value={difficulty} onChange={setDifficulty} />
+          <ScaleSlider label="Importance" value={importance} onChange={setImportance} />
 
-        <label className="void-label">Project</label>
-        <VoidSelect
-          className="void-task-form__select"
-          value={projectId}
-          onChange={setProjectId}
-          placeholder="No project"
-          options={[
-            { value: "", label: "No project" },
-            ...state.projects.map((p) => ({ value: p.id, label: p.name, color: p.color }))
-          ]}
-        />
+          <label className="void-label">Project</label>
+          <VoidSelect
+            className="void-task-form__select"
+            value={projectId}
+            onChange={setProjectId}
+            placeholder="No project"
+            options={[
+              { value: "", label: "No project" },
+              ...state.projects.map((p) => ({ value: p.id, label: p.name, color: p.color }))
+            ]}
+          />
 
-        <TimeDial hours={hours} minutes={minutes} onChange={handleTimeChange} />
-        {!timeTouched && (
-          <p className="void-form-hint void-form-hint--warn">
-            {isFa ? "زمان تخمینی را روی ساعت تنظیم کنید (الزامی)." : "Set estimated time on the clock (required)."}
-          </p>
-        )}
-        {timeTouched && estimatedMinutes < 5 && (
-          <p className="void-form-hint void-form-hint--warn">Minimum estimate is 5 minutes.</p>
-        )}
-      </div>
-      <div className="void-drawer__footer-cta">
-        <button
-          type="button"
-          className="void-btn void-btn--initiate void-task-form__submit"
-          disabled={!title.trim() || !timeValid || saving}
-          onClick={() => void submit()}
-        >
-          {saving ? "Saving…" : "Create task"}
-        </button>
-      </div>
+          <TimeDial hours={hours} minutes={minutes} onChange={handleTimeChange} />
+          {showValidation && !timeValid && (
+            <p className="void-form-hint void-form-hint--warn">
+              {isFa ? "حداقل زمان تخمینی ۵ دقیقه است." : "Minimum estimate is 5 minutes."}
+            </p>
+          )}
+          {!timeTouched && !showValidation && (
+            <p className="void-form-hint">
+              {isFa
+                ? `پیش‌فرض: ${DEFAULT_MINUTES} دقیقه — روی ساعت می‌توانید تغییر دهید.`
+                : `Default: ${DEFAULT_MINUTES} min — adjust on the clock if needed.`}
+            </p>
+          )}
+
+          {error && <p className="void-form-hint void-form-hint--warn">{error}</p>}
+        </div>
+
+        <div className="void-drawer__footer-cta">
+          <button
+            type="submit"
+            className="void-btn void-btn--initiate void-task-form__submit"
+            disabled={saving}
+          >
+            {saving ? (isFa ? "در حال ساخت…" : "Creating…") : isFa ? "ساخت تسک" : "Create task"}
+          </button>
+        </div>
+      </form>
     </Drawer>
   );
 }

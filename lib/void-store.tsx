@@ -270,8 +270,16 @@ export function VoidProvider({ children }: { children: ReactNode }) {
       const id = localId();
       await runOrQueue(
         async () => {
-          await apiCreateTask(body);
-          await refreshState();
+          const created = await apiCreateTask(body);
+          persist((prev) => ({
+            ...prev,
+            tasks: prev.tasks.some((t) => t.id === created.id) ? prev.tasks : [...prev.tasks, created]
+          }));
+          try {
+            await refreshState();
+          } catch {
+            /* keep optimistic task */
+          }
         },
         () => {
           persist((prev) => ({
@@ -328,8 +336,18 @@ export function VoidProvider({ children }: { children: ReactNode }) {
       const id = localId();
       await runOrQueue(
         async () => {
-          await apiCreateProject(body);
-          await refreshState();
+          const created = await apiCreateProject(body);
+          persist((prev) => ({
+            ...prev,
+            projects: prev.projects.some((p) => p.id === created.id)
+              ? prev.projects
+              : [...prev.projects, created]
+          }));
+          try {
+            await refreshState();
+          } catch {
+            /* keep optimistic project */
+          }
         },
         () => {
           persist((prev) => ({
@@ -349,7 +367,7 @@ export function VoidProvider({ children }: { children: ReactNode }) {
         "Project saved offline."
       );
     },
-    [persist, refreshState, runOrQueue, state]
+    [persist, refreshState, runOrQueue]
   );
 
   const updateProfile = useCallback<VoidContextValue["updateProfile"]>(
