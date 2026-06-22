@@ -1,0 +1,75 @@
+# Production — public web on port 3314 (API + DB internal only)
+# Usage: docker compose -f docker-compose.prod.yml --env-file .env up --build -d
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: aveno-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-void}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-void_spirit}
+    volumes:
+      - aveno_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-void} -d ${POSTGRES_DB:-void_spirit}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - aveno_internal
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        USE_IRAN_MIRRORS: ${USE_IRAN_MIRRORS:-true}
+    container_name: aveno-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-void}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-void_spirit}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-525600}
+      CORS_ORIGINS: ${PUBLIC_URL:?Set PUBLIC_URL in .env}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - aveno_internal
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        API_INTERNAL_URL: http://api:8000
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://mirror-npm.runflare.com}
+    container_name: aveno-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      API_INTERNAL_URL: http://api:8000
+    ports:
+      - "${APP_PORT:-3314}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - aveno_internal
+
+networks:
+  aveno_internal:
+    driver: bridge
+
+volumes:
+  aveno_pg_data:

@@ -9,16 +9,21 @@
     "typecheck": "tsc --noEmit",
     "docker:up": "docker compose up --build -d",
     "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f"
+    "docker:logs": "docker compose logs -f",
+    "docker:prod": "docker compose -f docker-compose.prod.yml --env-file .env up --build -d",
+    "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
+    "docker:prod:logs": "docker compose -f docker-compose.prod.yml logs -f"
   },
   "dependencies": {
     "framer-motion": "^12.40.0",
+    "jalaali-js": "^2.0.0",
     "lucide-react": "0.468.0",
     "next": "15.5.19",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   },
   "devDependencies": {
+    "@types/jalaali-js": "^1.2.0",
     "@types/node": "22.10.2",
     "@types/react": "19.0.2",
     "@types/react-dom": "19.0.2",

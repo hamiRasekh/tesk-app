@@ -10,7 +10,8 @@ from app.models.project import Project
 from app.models.task import Task
 from app.models.user import User
 from app.schemas.task import TaskCreate, TaskUpdate
-from app.services import XP_BY_PRIORITY, award_xp, flush_timer, state_from_user, task_to_dict
+from app.progression import grant_focus_xp, grant_task_completion_xp, sync_project_level
+from app.services import flush_timer, state_from_user, task_to_dict
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -86,8 +87,16 @@ def delete_task(task_id: UUID, user: User = Depends(get_current_user), db: Sessi
     task = db.query(Task).filter(Task.id == task_id, Task.user_id == user.id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    project_id = task.project_id
+    if task.status == "done":
+        user.completed_tasks = max(0, user.completed_tasks - 1)
     db.delete(task)
     db.commit()
+    if project_id:
+        project = db.query(Project).filter(Project.id == project_id, Project.user_id == user.id).first()
+        if project:
+            sync_project_level(project, db)
+            db.commit()
 
 
 @router.post("/{task_id}/timer/start")
@@ -137,8 +146,11 @@ def stop_timer(task_id: UUID, user: User = Depends(get_current_user), db: Sessio
     task = db.query(Task).filter(Task.id == task_id, Task.user_id == user.id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    minutes = 0
     if user.active_timer_task_id == task.id:
-        flush_timer(user, task, db, completed=False)
+        minutes = flush_timer(user, task, db, completed=False)
+        if minutes:
+            grant_focus_xp(user, minutes)
     db.commit()
     db.refresh(user)
     return state_from_user(user)
@@ -150,12 +162,22 @@ def complete_task(task_id: UUID, user: User = Depends(get_current_user), db: Ses
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     ended = datetime.now(timezone.utc)
+    flushed_minutes = 0
     if user.active_timer_task_id == task.id:
-        flush_timer(user, task, db, completed=True)
+        flushed_minutes = flush_timer(user, task, db, completed=True)
+        if flushed_minutes:
+            grant_focus_xp(user, flushed_minutes, ended)
     if task.status != "done":
-        award_xp(user, XP_BY_PRIORITY.get(task.priority, 50))
+        task.completed_at = ended
+        grant_task_completion_xp(user, task)
+        user.completed_tasks += 1
+        if task.project_id:
+            project = db.query(Project).filter(Project.id == task.project_id, Project.user_id == user.id).first()
+            if project:
+                sync_project_level(project, db)
     task.status = "done"
-    task.completed_at = ended
+    if not task.completed_at:
+        task.completed_at = ended
     db.commit()
     db.refresh(user)
     return state_from_user(user)

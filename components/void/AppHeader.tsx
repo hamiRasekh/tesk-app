@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { Drawer } from "./Drawer";
+import { VoidInput } from "./VoidInput";
 import { useVoid } from "@/lib/void-store";
 import { projectColorFor, TaskIndicators } from "./TaskIndicators";
 
@@ -36,8 +37,8 @@ export function AppHeader() {
       <Drawer open={searchOpen} onClose={() => setSearchOpen(false)}>
         <div className="void-drawer__body">
           <h2 className="void-drawer__title">Search tasks</h2>
-          <input
-            className="void-input void-input--pill"
+          <VoidInput
+            className="void-input--pill"
             placeholder="Search by title or description..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}

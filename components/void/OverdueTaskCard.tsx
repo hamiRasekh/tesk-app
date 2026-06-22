@@ -6,6 +6,7 @@ import type { Task } from "@/lib/void-types";
 import { isDueYesterday } from "@/lib/task-filters";
 import { toLocalDateStr } from "@/lib/void-utils";
 import { useVoid } from "@/lib/void-store";
+import { LocaleDatePicker } from "./JalaliDatePicker";
 
 type Props = {
   task: Task;
@@ -68,7 +69,7 @@ export function OverdueTaskCard({ task, onOpen }: Props) {
           </div>
         ) : (
           <div className="void-overdue-card__reschedule">
-            <input type="date" className="void-input void-input--pill" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
+            <LocaleDatePicker value={newDate} onChange={setNewDate} />
             <div className="void-overdue-card__actions">
               <button type="button" className="void-btn void-btn--initiate void-overdue-card__btn" disabled={saving} onClick={() => void handleReschedule()}>
                 Save date

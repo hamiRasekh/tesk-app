@@ -5,10 +5,19 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models.user import User
 from app.schemas.auth import AuthResponse, LoginRequest, SignupRequest
-from app.security import create_access_token, hash_password, verify_password
+from app.security import create_access_token, hash_password, token_ttl_seconds, verify_password
+from app.progression import xp_required_for_level
 from app.services import profile_from_user
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def auth_response(user: User) -> AuthResponse:
+    return AuthResponse(
+        access_token=create_access_token(str(user.id)),
+        expires_in=token_ttl_seconds(),
+        user=profile_from_user(user),
+    )
 
 
 @router.post("/signup", response_model=AuthResponse)
@@ -27,13 +36,18 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)) -> AuthRespons
         goals=payload.goals,
         title="Discipline Seeker",
         rank="AVENO RANK: TIER I",
+        level=1,
+        xp=0,
+        xp_to_next=xp_required_for_level(1),
+        streak=0,
+        completed_tasks=0,
+        total_focus_minutes=0,
     )
     db.add(user)
     db.commit()
     db.refresh(user)
 
-    token = create_access_token(str(user.id))
-    return AuthResponse(access_token=token, user=profile_from_user(user))
+    return auth_response(user)
 
 
 @router.post("/login", response_model=AuthResponse)
@@ -49,8 +63,13 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> AuthResponse:
     elif not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
-    token = create_access_token(str(user.id))
-    return AuthResponse(access_token=token, user=profile_from_user(user))
+    return auth_response(user)
+
+
+@router.post("/refresh", response_model=AuthResponse)
+def refresh_session(user: User = Depends(get_current_user)) -> AuthResponse:
+    """Issue a fresh JWT (same 1-year TTL) while the current token is still valid."""
+    return auth_response(user)
 
 
 @router.get("/me")

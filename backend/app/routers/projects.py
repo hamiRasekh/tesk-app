@@ -28,7 +28,7 @@ def create_project(payload: ProjectCreate, user: User = Depends(get_current_user
         description=payload.description,
         color=payload.color,
         realm=payload.realm,
-        level=payload.level,
+        level=1,
     )
     db.add(project)
     db.commit()

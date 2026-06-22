@@ -56,13 +56,13 @@ a {
 }
 
 @media (min-width: 520px) {
-  body {
+  html:not([data-aveno-standalone]) body {
     display: grid;
     place-items: center;
     padding: 28px;
   }
 
-  .device-shell {
+  html:not([data-aveno-standalone]) .device-shell {
     width: 430px;
     min-height: 860px;
     max-height: calc(100dvh - 56px);

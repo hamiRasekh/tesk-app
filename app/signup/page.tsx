@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { apiSignup, isOfflineError, purgeLegacyDemoStorage, setToken } from "@/lib/api";
 import { APP_NAME } from "@/lib/brand";
 import { VoidSpirit } from "@/components/void/VoidSpirit";
+import { VoidInput } from "@/components/void/VoidInput";
 import { registerServiceWorker } from "../sw-register";
 
 const jobs = [
@@ -171,25 +172,24 @@ export default function SignupPage() {
                   {step === "name" && (
                     <label className="void-label">
                       Your name
-                      <input className="void-input" value={form.name} onChange={(e) => updateField("name", e.target.value)} placeholder="Your name" autoComplete="name" />
+                      <VoidInput value={form.name} onChange={(e) => updateField("name", e.target.value)} placeholder="Your name" autoComplete="name" />
                     </label>
                   )}
                   {step === "email" && (
                     <label className="void-label">
                       Email address
-                      <input className="void-input" value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="you@aveno.app" type="email" autoComplete="email" />
+                      <VoidInput value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="you@aveno.app" type="email" autoComplete="email" />
                     </label>
                   )}
                   {step === "password" && (
                     <>
                       <label className="void-label">
                         Create password
-                        <input className="void-input" value={form.password} onChange={(e) => updateField("password", e.target.value)} placeholder="At least 8 characters" type="password" autoComplete="new-password" />
+                        <VoidInput value={form.password} onChange={(e) => updateField("password", e.target.value)} placeholder="At least 8 characters" type="password" autoComplete="new-password" />
                       </label>
                       <label className="void-label" style={{ marginTop: 14 }}>
                         Confirm password
-                        <input
-                          className="void-input"
+                        <VoidInput
                           value={form.confirmPassword}
                           onChange={(e) => updateField("confirmPassword", e.target.value)}
                           placeholder="Repeat your password"
@@ -205,7 +205,7 @@ export default function SignupPage() {
                   {step === "phone" && (
                     <label className="void-label">
                       Mobile number
-                      <input className="void-input" value={form.phone} onChange={(e) => updateField("phone", e.target.value)} placeholder="+1 000 000 0000" inputMode="tel" autoComplete="tel" />
+                      <VoidInput value={form.phone} onChange={(e) => updateField("phone", e.target.value)} placeholder="+1 000 000 0000" inputMode="tel" autoComplete="tel" />
                     </label>
                   )}
                   {step === "age" && (

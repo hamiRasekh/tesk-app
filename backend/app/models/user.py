@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import DateTime, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -20,9 +20,10 @@ class User(Base):
     title: Mapped[str] = mapped_column(String(120), default="Discipline Seeker")
     rank: Mapped[str] = mapped_column(String(120), default="AVENO RANK: TIER I")
     streak: Mapped[int] = mapped_column(Integer, default=0)
+    last_active_date: Mapped[date | None] = mapped_column(nullable=True)
     level: Mapped[int] = mapped_column(Integer, default=1)
     xp: Mapped[int] = mapped_column(Integer, default=0)
-    xp_to_next: Mapped[int] = mapped_column(Integer, default=300)
+    xp_to_next: Mapped[int] = mapped_column(Integer, default=100)
     total_focus_minutes: Mapped[int] = mapped_column(Integer, default=0)
     completed_tasks: Mapped[int] = mapped_column(Integer, default=0)
     jobs: Mapped[list] = mapped_column(JSONB, default=list)

@@ -5,9 +5,12 @@ import { Drawer } from "./Drawer";
 import { ScaleSlider } from "./ScaleSlider";
 import { TimeDial, timeToEstimatedMinutes } from "./TimeDial";
 import { VoidSelect } from "./VoidSelect";
+import { VoidInput } from "./VoidInput";
+import { LocaleDatePicker } from "./JalaliDatePicker";
 import { useVoid } from "@/lib/void-store";
 import { importanceToPriority } from "@/lib/void-utils";
 import { toLocalDateStr } from "@/lib/void-utils";
+import { useLocale } from "@/lib/locale";
 
 type Props = {
   open: boolean;
@@ -18,6 +21,7 @@ type Props = {
 
 export function AddTaskDrawer({ open, onClose, defaultProjectId = null, defaultDate }: Props) {
   const { state, addTask } = useVoid();
+  const { isFa } = useLocale();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [difficulty, setDifficulty] = useState(5);
@@ -86,28 +90,23 @@ export function AddTaskDrawer({ open, onClose, defaultProjectId = null, defaultD
         <h2 className="void-drawer__title void-task-form__title">Add a task to your day</h2>
 
         <label className="void-label">Task name</label>
-        <input
-          className="void-input void-input--pill void-task-form__input"
+        <VoidInput
+          className="void-input--pill void-task-form__input"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="What do you need to do?"
         />
 
         <label className="void-label">Description</label>
-        <input
-          className="void-input void-input--pill void-task-form__input"
+        <VoidInput
+          className="void-input--pill void-task-form__input"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Optional details or notes"
         />
 
         <label className="void-label">Due date</label>
-        <input
-          type="date"
-          className="void-input void-input--pill void-task-form__input"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
+        <LocaleDatePicker value={dueDate} onChange={setDueDate} className="void-task-form__input" />
 
         <ScaleSlider label="Difficulty" value={difficulty} onChange={setDifficulty} />
         <ScaleSlider label="Importance" value={importance} onChange={setImportance} />
@@ -125,7 +124,11 @@ export function AddTaskDrawer({ open, onClose, defaultProjectId = null, defaultD
         />
 
         <TimeDial hours={hours} minutes={minutes} onChange={handleTimeChange} />
-        {!timeTouched && <p className="void-form-hint void-form-hint--warn">Set estimated time on the dial (required).</p>}
+        {!timeTouched && (
+          <p className="void-form-hint void-form-hint--warn">
+            {isFa ? "زمان تخمینی را روی ساعت تنظیم کنید (الزامی)." : "Set estimated time on the clock (required)."}
+          </p>
+        )}
         {timeTouched && estimatedMinutes < 5 && (
           <p className="void-form-hint void-form-hint--warn">Minimum estimate is 5 minutes.</p>
         )}

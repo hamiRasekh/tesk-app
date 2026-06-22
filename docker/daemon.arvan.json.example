@@ -1,0 +1,4 @@
+{
+  "registry-mirrors": ["https://docker.arvancloud.ir"],
+  "max-concurrent-downloads": 10
+}

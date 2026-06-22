@@ -5,13 +5,18 @@ from app.database import get_db
 from app.deps import get_current_user
 from app.models.user import User
 from app.schemas.profile import ProfileUpdate
+from app.progression import sync_project_level
 from app.services import profile_from_user, state_from_user
 
 router = APIRouter(prefix="/api", tags=["app"])
 
 
 @router.get("/state")
-def get_state(user: User = Depends(get_current_user)) -> dict:
+def get_state(user: User = Depends(get_current_user), db: Session = Depends(get_db)) -> dict:
+    for project in user.projects:
+        sync_project_level(project, db)
+    db.commit()
+    db.refresh(user)
     return state_from_user(user)
 
 
@@ -26,10 +31,6 @@ def update_profile(
         user.email = payload.email.lower()
     if payload.name is not None:
         user.name = payload.name.strip()
-    if payload.title is not None:
-        user.title = payload.title
-    if payload.rank is not None:
-        user.rank = payload.rank
     db.commit()
     db.refresh(user)
     return profile_from_user(user)

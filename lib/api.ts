@@ -41,7 +41,17 @@ export function isAppOnline(): boolean {
 }
 
 export function isOfflineError(err: unknown): boolean {
-  return err instanceof OfflineError || (err instanceof TypeError && !isAppOnline());
+  if (err instanceof OfflineError) return true;
+  if (err instanceof TypeError) {
+    const msg = err.message.toLowerCase();
+    return (
+      !isAppOnline() ||
+      msg.includes("failed to fetch") ||
+      msg.includes("network") ||
+      msg.includes("load failed")
+    );
+  }
+  return false;
 }
 
 /** Same-origin proxy — works on mobile PWA (no localhost:8000 on phone) */
@@ -67,9 +77,33 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+const DEMO_PROJECT_NAMES = new Set([
+  "System Architecture",
+  "Nexus Protocol",
+  "Void Core",
+  "Aveno Core"
+]);
+
 export function purgeLegacyDemoStorage() {
   if (typeof window === "undefined") return;
   localStorage.removeItem(LEGACY_STORAGE_KEY);
+  try {
+    const raw = localStorage.getItem("aveno-cache-v1");
+    if (raw) {
+      const parsed = JSON.parse(raw) as {
+        profile?: { email?: string; level?: number };
+        projects?: { name?: string }[];
+      };
+      const hasDemoProfile =
+        parsed.profile?.email === "demo@aveno.app" || (parsed.profile?.level ?? 0) >= 40;
+      const hasDemoProjects = (parsed.projects ?? []).some((p) => DEMO_PROJECT_NAMES.has(p.name ?? ""));
+      if (hasDemoProfile || hasDemoProjects) {
+        localStorage.removeItem("aveno-cache-v1");
+      }
+    }
+  } catch {
+    /* ignore */
+  }
 }
 
 function parseErrorDetail(detail: unknown): string {
@@ -96,13 +130,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   try {
     res = await fetch(`${getApiBase()}${path}`, { ...options, headers, cache: "no-store" });
   } catch {
-    if (!isAppOnline()) throw new OfflineError();
-    throw new OfflineError("Connection lost. Check your network.");
+    throw new OfflineError();
   }
 
   if (!res.ok) {
     if (res.status === 401) throw new AuthError();
     const err = await res.json().catch(() => ({ detail: res.statusText }));
+    if (res.status === 503 && err.detail === "offline") throw new OfflineError();
+    if (!isAppOnline() || res.status === 503) throw new OfflineError();
     throw new Error(parseErrorDetail(err.detail ?? res.statusText));
   }
   if (res.status === 204) return undefined as T;
@@ -110,16 +145,23 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export async function apiLogin(email: string, password: string) {
-  return request<{ access_token: string; user: Record<string, unknown> }>("/auth/login", {
+  return request<{ access_token: string; expires_in: number; user: Record<string, unknown> }>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password })
   });
 }
 
 export async function apiSignup(body: Record<string, unknown>) {
-  return request<{ access_token: string; user: Record<string, unknown> }>("/auth/signup", {
+  return request<{ access_token: string; expires_in: number; user: Record<string, unknown> }>("/auth/signup", {
     method: "POST",
     body: JSON.stringify(body)
+  });
+}
+
+/** Renew JWT while current token is valid (extends 1-year session). */
+export async function apiRefreshToken() {
+  return request<{ access_token: string; expires_in: number; user: Record<string, unknown> }>("/auth/refresh", {
+    method: "POST"
   });
 }
 

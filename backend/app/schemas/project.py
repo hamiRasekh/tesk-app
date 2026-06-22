@@ -14,4 +14,3 @@ class ProjectUpdate(BaseModel):
     description: str | None = None
     color: str | None = None
     realm: str | None = None
-    level: int | None = None

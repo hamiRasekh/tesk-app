@@ -16,6 +16,7 @@ import {
   apiCreateTask,
   apiGetState,
   apiPauseTimer,
+  apiRefreshToken,
   apiStartTimer,
   apiStopTimer,
   apiUpdateProfile,
@@ -26,12 +27,17 @@ import {
   isAppOnline,
   isOfflineError,
   migrateLegacyBrandingStorage,
-  purgeLegacyDemoStorage
+  purgeLegacyDemoStorage,
+  setToken
 } from "./api";
 import { clearCachedState, loadCachedState, saveCachedState } from "./offline-cache";
 import { enqueueMutation, flushOfflineQueue, getQueueLength } from "./offline-queue";
 import { emptyState } from "./void-data";
+import { applyXp, xpForFocusMinutes, xpForTaskCompletion } from "./xp";
+import { projectLevelFromTasks } from "./void-utils";
 import { useVoidNotice } from "./void-notice";
+import { useLocale } from "./locale";
+import { offlineMsg } from "./offline-messages";
 import type { AppState, Priority, Project, Task, TaskStatus, UserProfile } from "./void-types";
 
 function normalizeState(state: AppState): AppState {
@@ -71,6 +77,8 @@ const VoidContext = createContext<VoidContextValue | null>(null);
 
 export function VoidProvider({ children }: { children: ReactNode }) {
   const { notify, online, setPendingSync } = useVoidNotice();
+  const { isFa } = useLocale();
+  const msgs = offlineMsg(isFa ? "fa" : "en");
   const [state, setState] = useState<AppState>(() => {
     if (typeof window === "undefined") return emptyState;
     return normalizeState(loadCachedState() ?? emptyState);
@@ -93,12 +101,22 @@ export function VoidProvider({ children }: { children: ReactNode }) {
     const token = getToken();
     if (!token) return;
     if (!isAppOnline()) {
-      notify("You are offline. Showing saved data.", "offline");
+      notify(msgs.showingCache, "offline");
       return;
+    }
+    try {
+      const refreshed = await apiRefreshToken();
+      setToken(refreshed.access_token);
+    } catch (err) {
+      if (err instanceof AuthError) throw err;
+      if (isOfflineError(err)) {
+        notify(msgs.showingCache, "offline");
+        return;
+      }
     }
     const remote = await apiGetState();
     persist(remote);
-  }, [notify, persist]);
+  }, [notify, persist, msgs.showingCache]);
 
   const syncFromServer = useCallback(async () => {
     if (syncingRef.current || !getToken() || !isAppOnline()) return;
@@ -110,15 +128,15 @@ export function VoidProvider({ children }: { children: ReactNode }) {
         setPendingSync(0);
       }
       await refreshState();
-      notify("Back online — everything is synced.", "success");
+      notify(msgs.backOnline, "success");
     } catch (err) {
       if (!isOfflineError(err)) {
-        notify("Sync failed. Your changes are still saved locally.", "error");
+        notify(msgs.syncFailed, "error");
       }
     } finally {
       syncingRef.current = false;
     }
-  }, [notify, refreshState, setPendingSync]);
+  }, [notify, refreshState, setPendingSync, msgs.backOnline, msgs.syncFailed]);
 
   useEffect(() => {
     purgeLegacyDemoStorage();
@@ -145,9 +163,9 @@ export function VoidProvider({ children }: { children: ReactNode }) {
 
       if (!isAppOnline()) {
         if (cached) {
-          notify("You are offline. Showing your last saved data.", "offline");
+          notify(msgs.showingCache, "offline");
         } else {
-          notify("You are offline. Connect once to load your data.", "offline");
+          notify(msgs.noCache, "offline");
         }
         setReady(true);
         setLoading(false);
@@ -160,6 +178,8 @@ export function VoidProvider({ children }: { children: ReactNode }) {
           await flushOfflineQueue();
           setPendingSync(0);
         }
+        const refreshed = await apiRefreshToken();
+        setToken(refreshed.access_token);
         const remote = await apiGetState();
         persist(remote);
       } catch (err) {
@@ -171,10 +191,10 @@ export function VoidProvider({ children }: { children: ReactNode }) {
           if (typeof window !== "undefined") window.location.href = "/login";
           return;
         }
-        if (cached) {
-          notify("Could not reach server. Using data saved on this device.", "offline");
+        if (isOfflineError(err) || cached) {
+          notify(cached ? msgs.serverUnreachable : msgs.noCache, "offline");
         } else {
-          notify("Connection problem. Try again when you are online.", "error");
+          notify(msgs.connectionLost, "error");
         }
       } finally {
         setReady(true);
@@ -183,14 +203,17 @@ export function VoidProvider({ children }: { children: ReactNode }) {
     }
 
     void init();
-  }, [notify, persist, setPendingSync]);
+  }, [notify, persist, setPendingSync, msgs.showingCache, msgs.noCache, msgs.serverUnreachable, msgs.connectionLost]);
 
   useEffect(() => {
     function onOnline() {
       void syncFromServer();
     }
     function onFocus() {
-      if (getToken() && isAppOnline()) void refreshState().catch(() => undefined);
+      if (!getToken() || !isAppOnline()) return;
+      void refreshState().catch((err) => {
+        if (!isOfflineError(err) && !(err instanceof AuthError)) return;
+      });
     }
     window.addEventListener("online", onOnline);
     window.addEventListener("focus", onFocus);
@@ -412,10 +435,10 @@ export function VoidProvider({ children }: { children: ReactNode }) {
           activeTimerTaskId: null,
           timerStartedAt: null,
           timerAccumulatedSeconds: 0,
-          profile: {
-            ...prev.profile,
-            totalFocusMinutes: prev.profile.totalFocusMinutes + elapsed
-          },
+          profile: applyXp(
+            { ...prev.profile, totalFocusMinutes: prev.profile.totalFocusMinutes + elapsed },
+            xpForFocusMinutes(elapsed)
+          ),
           tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, loggedMinutes: t.loggedMinutes + elapsed } : t))
         }));
       },
@@ -441,26 +464,54 @@ export function VoidProvider({ children }: { children: ReactNode }) {
                 : 0;
             const elapsed =
               prev.activeTimerTaskId === taskId ? Math.max(1, Math.floor((base + running) / 60)) : 0;
+            const task = prev.tasks.find((t) => t.id === taskId);
+            const updatedTasks = prev.tasks.map((t) =>
+              t.id === taskId
+                ? {
+                    ...t,
+                    status: "done" as TaskStatus,
+                    completedAt: ended,
+                    loggedMinutes: t.loggedMinutes + elapsed
+                  }
+                : t
+            );
+            let profile = {
+              ...prev.profile,
+              completedTasks: prev.profile.completedTasks + 1,
+              totalFocusMinutes: prev.profile.totalFocusMinutes + elapsed
+            };
+            if (elapsed > 0) {
+              profile = applyXp(profile, xpForFocusMinutes(elapsed));
+            }
+            if (task) {
+              profile = applyXp(
+                profile,
+                xpForTaskCompletion(
+                  task.priority,
+                  task.difficulty ?? 5,
+                  task.importance ?? 5,
+                  task.dueDate,
+                  ended
+                )
+              );
+            }
+            const projectId = task?.projectId;
+            const projects =
+              projectId == null
+                ? prev.projects
+                : prev.projects.map((p) =>
+                    p.id === projectId
+                      ? { ...p, level: projectLevelFromTasks(updatedTasks.filter((t) => t.projectId === projectId)) }
+                      : p
+                  );
             return {
               ...prev,
               activeTimerTaskId: prev.activeTimerTaskId === taskId ? null : prev.activeTimerTaskId,
               timerStartedAt: prev.activeTimerTaskId === taskId ? null : prev.timerStartedAt,
               timerAccumulatedSeconds: prev.activeTimerTaskId === taskId ? 0 : prev.timerAccumulatedSeconds,
-              profile: {
-                ...prev.profile,
-                completedTasks: prev.profile.completedTasks + 1,
-                totalFocusMinutes: prev.profile.totalFocusMinutes + elapsed
-              },
-              tasks: prev.tasks.map((t) =>
-                t.id === taskId
-                  ? {
-                      ...t,
-                      status: "done" as TaskStatus,
-                      completedAt: ended,
-                      loggedMinutes: t.loggedMinutes + elapsed
-                    }
-                  : t
-              )
+              profile,
+              projects,
+              tasks: updatedTasks
             };
           });
         },

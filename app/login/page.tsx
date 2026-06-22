@@ -8,7 +8,9 @@ import { useRouter } from "next/navigation";
 import { apiLogin, getToken, isOfflineError, purgeLegacyDemoStorage, setToken } from "@/lib/api";
 import { loadCachedState } from "@/lib/offline-cache";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { useLocale } from "@/lib/locale";
 import { VoidSpirit } from "@/components/void/VoidSpirit";
+import { VoidInput } from "@/components/void/VoidInput";
 import { registerServiceWorker } from "../sw-register";
 
 const PARTICLES = Array.from({ length: 24 }, (_, i) => ({
@@ -30,6 +32,7 @@ const fadeUp = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { isFa } = useLocale();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -55,7 +58,7 @@ export default function LoginPage() {
       window.location.href = "/dashboard";
     } catch (err) {
       if (isOfflineError(err)) {
-        setError("You are offline. Connect to the internet to sign in.");
+        setError(isFa ? "اینترنت قطع است. برای ورود باید آنلاین باشید." : "You are offline. Connect to the internet to sign in.");
       } else {
         setError(err instanceof Error ? err.message : "Login failed. Check your credentials.");
       }
@@ -99,7 +102,7 @@ export default function LoginPage() {
             initial="hidden"
             animate="visible"
           >
-            <VoidSpirit variant="hello" scale="lg" showcase glow />
+            <VoidSpirit variant="hello" scale="md" glow />
             <div className="void-spirit-pedestal" />
           </motion.div>
 
@@ -113,8 +116,7 @@ export default function LoginPage() {
           <motion.div className="void-form" custom={3} variants={fadeUp} initial="hidden" animate="visible">
             <div className="void-input-wrap">
               <Mail className="void-input-icon" size={22} strokeWidth={2} />
-              <input
-                className="void-input"
+              <VoidInput
                 type="email"
                 placeholder="Email address"
                 value={email}
@@ -125,8 +127,7 @@ export default function LoginPage() {
 
             <div className="void-input-wrap">
               <Lock className="void-input-icon" size={22} strokeWidth={2} />
-              <input
-                className="void-input"
+              <VoidInput
                 type="password"
                 placeholder="Password (min. 8 characters)"
                 value={password}

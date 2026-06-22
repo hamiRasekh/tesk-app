@@ -1496,6 +1496,50 @@ body:has(.void-offline-bar) .void-shell {
   padding-top: 36px;
 }
 
+.void-offline-fallback {
+  min-height: 60dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 20px;
+  gap: 12px;
+}
+
+.void-offline-fallback__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  margin-bottom: 4px;
+}
+
+.void-offline-fallback h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--void-primary);
+}
+
+.void-offline-fallback p {
+  margin: 0;
+  max-width: 280px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--void-muted);
+}
+
+.void-offline-fallback__btn {
+  margin-top: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 999px;
+  background: var(--void-accent-deep);
+  color: var(--void-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
 /* ── Project detail page ── */
 
 .void-proj-page {

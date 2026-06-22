@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Network, Rocket, Shield, Circle } from "lucide-react";
 import { ColorPicker } from "./ColorPicker";
 import { Drawer } from "./Drawer";
+import { VoidInput } from "./VoidInput";
 import { useVoid } from "@/lib/void-store";
 import { DEFAULT_PROJECT_COLOR } from "@/lib/project-colors";
 import type { RealmIcon } from "@/lib/void-types";
@@ -65,8 +66,8 @@ export function AddProjectDrawer({ open, onClose }: Props) {
         </h2>
 
         <label className="void-label">Project name</label>
-        <input
-          className="void-input void-input--pill"
+        <VoidInput
+          className="void-input--pill"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. Website redesign"
@@ -93,8 +94,8 @@ export function AddProjectDrawer({ open, onClose }: Props) {
         </div>
 
         <label className="void-label">Description</label>
-        <input
-          className="void-input void-input--pill"
+        <VoidInput
+          className="void-input--pill"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="What is this project about?"

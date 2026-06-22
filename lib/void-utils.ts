@@ -1,4 +1,5 @@
 import type { Priority, Task } from "./void-types";
+import { XP_BY_PRIORITY } from "./xp";
 
 export function hoursFromMinutes(m: number) {
   return `${Math.floor(m / 60)}h`;
@@ -65,7 +66,7 @@ export function priorityLabel(p: Priority) {
 
 export function projectLevelFromTasks(tasks: Task[]) {
   const done = tasks.filter((t) => t.status === "done").length;
-  return Math.min(99, 8 + done * 2);
+  return Math.min(99, 1 + Math.floor(done / 2));
 }
 
 export function importanceToPriority(importance: number): Priority {
@@ -76,6 +77,5 @@ export function importanceToPriority(importance: number): Priority {
 }
 
 export function xpForTask(priority: Priority) {
-  const map = { critical: 120, high: 80, medium: 50, low: 30 };
-  return map[priority];
+  return XP_BY_PRIORITY[priority];
 }

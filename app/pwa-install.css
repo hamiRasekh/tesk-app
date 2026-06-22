@@ -1,0 +1,185 @@
+.void-pwa-install {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  background: rgba(5, 4, 10, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.void-pwa-install__card {
+  position: relative;
+  width: min(100%, 380px);
+  padding: 22px 20px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: linear-gradient(165deg, rgba(31, 24, 48, 0.98), rgba(13, 11, 20, 0.98));
+  box-shadow:
+    0 0 40px rgba(98, 0, 238, 0.28),
+    0 24px 48px rgba(0, 0, 0, 0.45);
+  color: #e4e1e7;
+  text-align: center;
+}
+
+.void-pwa-install__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: #948da2;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.void-pwa-install__icon-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 12px;
+}
+
+.void-pwa-install__icon {
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  box-shadow: 0 0 24px rgba(139, 92, 246, 0.45);
+}
+
+.void-pwa-install__badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #6200ee;
+  color: #cfbdff;
+  display: grid;
+  place-items: center;
+  border: 2px solid #1a1528;
+}
+
+.void-pwa-install__eyebrow {
+  margin: 0 0 6px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a78bfa;
+}
+
+.void-pwa-install__title {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #cfbdff;
+}
+
+.void-pwa-install__text {
+  margin: 0 0 14px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #cbc3d9;
+}
+
+.void-pwa-install__steps {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: start;
+}
+
+.void-pwa-install__steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #e4e1e7;
+}
+
+.void-pwa-install__steps li svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #a78bfa;
+}
+
+.void-pwa-install__hint {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(148, 141, 162, 0.35);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #948da2;
+}
+
+.void-pwa-install__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.void-pwa-install__primary {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: 9999px;
+  background: #6200ee;
+  color: #cfbdff;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(207, 189, 255, 0.35);
+}
+
+.void-pwa-install__primary:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.void-pwa-install__later {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: #948da2;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.void-pwa-install__later:hover {
+  color: #cfbdff;
+}
+
+[dir="rtl"] .void-pwa-install__close {
+  right: auto;
+  left: 12px;
+}
+
+[dir="rtl"] .void-pwa-install__steps {
+  text-align: right;
+}

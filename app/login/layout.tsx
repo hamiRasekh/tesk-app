@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import "../void-theme.css";
 import "./login.css";
 
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/brand";

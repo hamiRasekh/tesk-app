@@ -3,6 +3,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { isAppOnline } from "./api";
+import { useLocale } from "./locale";
+import { offlineMsg } from "./offline-messages";
 
 export type NoticeKind = "offline" | "info" | "success" | "error";
 
@@ -22,6 +24,8 @@ type NoticeContextValue = {
 const NoticeContext = createContext<NoticeContextValue | null>(null);
 
 export function VoidNoticeProvider({ children }: { children: ReactNode }) {
+  const { isFa } = useLocale();
+  const msgs = offlineMsg(isFa ? "fa" : "en");
   const [online, setOnline] = useState(true);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [pendingSync, setPendingSync] = useState(0);
@@ -42,7 +46,7 @@ export function VoidNoticeProvider({ children }: { children: ReactNode }) {
     }
     function onOffline() {
       setOnline(false);
-      notify("You are offline. Your saved data is still available.", "offline");
+      notify(msgs.toast, "offline");
     }
 
     window.addEventListener("online", onOnline);
@@ -51,7 +55,7 @@ export function VoidNoticeProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
     };
-  }, [notify]);
+  }, [msgs.toast, notify]);
 
   const value = useMemo(
     () => ({ online, pendingSync, notify, setPendingSync }),
@@ -71,8 +75,7 @@ export function VoidNoticeProvider({ children }: { children: ReactNode }) {
             exit={{ opacity: 0, y: -8 }}
           >
             <span className="void-offline-bar__dot" />
-            Offline mode — using data saved on this device
-            {pendingSync > 0 ? ` · ${pendingSync} change${pendingSync > 1 ? "s" : ""} waiting to sync` : ""}
+            {pendingSync > 0 ? msgs.barPending(pendingSync) : msgs.bar}
           </motion.div>
         )}
       </AnimatePresence>

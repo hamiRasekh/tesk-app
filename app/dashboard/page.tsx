@@ -15,6 +15,7 @@ import { isToday, sortByPriority, useVoid } from "@/lib/void-store";
 import type { Task } from "@/lib/void-types";
 import { groupTodayBoard } from "@/lib/task-filters";
 import { hoursFromMinutes } from "@/lib/void-utils";
+import { xpProgressPercent } from "@/lib/xp";
 
 const PREVIEW = 3;
 
@@ -39,7 +40,7 @@ export default function HomePage() {
       ? "happy"
       : "idle";
 
-  const xpPercent = Math.round((state.profile.xp / state.profile.xpToNext) * 100);
+  const xpPercent = xpProgressPercent(state.profile.xp, state.profile.xpToNext);
 
   function openTask(task: Task) {
     setSelectedTask(task);
@@ -61,7 +62,7 @@ export default function HomePage() {
           <div>
             <div className="void-stat-card__value">Lv.{state.profile.level}</div>
             <div className="void-stat-card__label">
-              {state.profile.xp}/{state.profile.xpToNext} XP
+              {state.profile.title} · {state.profile.xp}/{state.profile.xpToNext} XP
             </div>
           </div>
         </motion.div>

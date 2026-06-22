@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { apiGetCalendarDay, isOfflineError } from "@/lib/api";
 import { loadCachedCalendarDay, saveCachedCalendarDay } from "@/lib/offline-cache";
 import type { CalendarDayData } from "@/lib/void-types";
+import { useLocale } from "@/lib/locale";
+import { gregorianToJalali, JALALI_MONTHS_FA } from "@/lib/jalali";
+import { toPersianDigits } from "@/lib/persian-text";
 import { formatMinutes, formatTime } from "@/lib/void-utils";
 
 type Props = {
@@ -20,6 +23,7 @@ function buildHourlyBuckets(sessions: CalendarDayData["workSessions"]) {
 }
 
 export function CalendarDayInsight({ date }: Props) {
+  const { useJalali, usePersianDigits, isFa } = useLocale();
   const [data, setData] = useState<CalendarDayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,11 +85,19 @@ export function CalendarDayInsight({ date }: Props) {
   }, [hourly]);
   const maxBucket = Math.max(...hourly, 1);
 
-  const label = new Date(date + "T12:00:00").toLocaleDateString("en", {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-  });
+  const label = useMemo(() => {
+    if (useJalali) {
+      const { jy, jm, jd } = gregorianToJalali(date);
+      const weekday = new Date(date + "T12:00:00").toLocaleDateString("fa-IR", { weekday: "long" });
+      const dayPart = usePersianDigits ? toPersianDigits(`${jd} ${JALALI_MONTHS_FA[jm - 1]} ${jy}`) : `${jd} ${JALALI_MONTHS_FA[jm - 1]} ${jy}`;
+      return `${weekday} · ${dayPart}`;
+    }
+    return new Date(date + "T12:00:00").toLocaleDateString(isFa ? "fa-IR" : "en", {
+      weekday: "long",
+      month: "short",
+      day: "numeric"
+    });
+  }, [date, useJalali, usePersianDigits, isFa]);
 
   if (loading) {
     return (
