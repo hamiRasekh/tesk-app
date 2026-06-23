@@ -34,7 +34,7 @@ import { clearCachedState, loadCachedState, saveCachedState } from "./offline-ca
 import { enqueueMutation, flushOfflineQueue, getQueueLength } from "./offline-queue";
 import { emptyState } from "./void-data";
 import { applyXp, xpForFocusMinutes, xpForTaskCompletion } from "./xp";
-import { projectLevelFromTasks } from "./void-utils";
+import { projectLevelFromTasks, randomId } from "./void-utils";
 import { useVoidNotice } from "./void-notice";
 import { useLocale } from "./locale";
 import { offlineMsg } from "./offline-messages";
@@ -54,7 +54,7 @@ function normalizeState(state: AppState): AppState {
 }
 
 function localId() {
-  return `local-${crypto.randomUUID()}`;
+  return `local-${randomId()}`;
 }
 
 type VoidContextValue = {
